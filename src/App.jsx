@@ -19,7 +19,7 @@ function App() {
       }
     }
     // Default fallback account if storage is pristine
-    return [{ fullName: "Uthman", email: "geniusuthman@gmail.com", password: "password123" }];
+    return [];
   });
 
   // Track active logged-in user

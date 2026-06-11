@@ -181,15 +181,12 @@ export const SignupView = ({ onNavigate, users, setUsers, setCurrentUser }) => {
     if (typeof setUsers === 'function') {
       setUsers([...(users || []), newUser]);
     }
-    if (typeof setCurrentUser === 'function') {
-      setCurrentUser(newUser);
-    }
 
     // Trigger welcome email dispatch
     sendWelcomeEmail(email.toLowerCase(), fullName);
 
     alert("✅ Account created successfully! A welcome email has been sent to you.");
-    onNavigate('selection');
+    onNavigate('login');
   };
 
   return (

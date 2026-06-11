@@ -12,6 +12,7 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
   const [selectedTemplate, setSelectedTemplate] = useState('classic_executive');
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const resumeCanvasRef = useRef(null);
 
   useEffect(() => {
@@ -913,10 +914,21 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
   return (
     <div className="h-screen w-screen flex bg-slate-50 overflow-hidden text-slate-800 font-sans" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
+      {/* Backdrop for mobile drawer */}
+      {isMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
+
       {/* 1. 🟢 SIDEBAR REBRANDED */}
-      <div className="w-64 bg-slate-900 text-slate-100 flex flex-col p-6 gap-3 shrink-0 shadow-2xl relative z-20">
+      <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-100 flex flex-col p-6 gap-3 shrink-0 shadow-2xl transition-transform duration-300 transform md:translate-x-0 md:relative ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <button
-          onClick={() => onNavigate('dashboard')}
+          onClick={() => {
+            setIsMenuOpen(false);
+            onNavigate('dashboard');
+          }}
           className="flex items-center gap-1.5 px-2 mb-12 hover:opacity-85 transition cursor-pointer text-left focus:outline-none"
         >
           <div className="bg-[#10B981] p-1.5 rounded-lg shadow-lg shadow-emerald-500/20">
@@ -931,7 +943,10 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
           {tabs.map((tab) => (
             <button
               key={tab.name}
-              onClick={() => setActiveTab(tab.name)}
+              onClick={() => {
+                setActiveTab(tab.name);
+                setIsMenuOpen(false);
+              }}
               className={`flex items-center gap-3 w-full text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === tab.name
                 ? 'bg-[#10B981] text-white shadow-xl shadow-emerald-900/40 translate-x-1'
                 : 'text-slate-500 hover:bg-slate-800 hover:text-slate-100'
@@ -944,7 +959,10 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
         </nav>
 
         <button
-          onClick={() => onNavigate('landing')}
+          onClick={() => {
+            setIsMenuOpen(false);
+            onNavigate('landing');
+          }}
           className="mt-auto flex items-center gap-3 px-5 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-red-500/10 hover:text-red-500 transition-all group"
         >
           <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" /> Logout
@@ -952,8 +970,21 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
       </div>
 
       {/* 2. 🟢 MIDDLE EDITOR REBRANDED */}
-      <div className="flex-1 bg-white p-12 overflow-y-auto shadow-inner flex flex-col border-r border-slate-100">
+      <div className="flex-1 bg-white p-6 md:p-12 overflow-y-auto shadow-inner flex flex-col border-r border-slate-100">
         <div className="max-w-2xl mx-auto w-full">
+          {/* Mobile Menu Top Bar */}
+          <div className="flex items-center justify-between md:hidden mb-6">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2 -ml-2 text-slate-600 hover:text-slate-900 focus:outline-none"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <span className="text-sm font-black uppercase tracking-widest text-[#10B981]">resume.ai</span>
+          </div>
+
           {/* Back to Dashboard Link Button */}
           <button
             onClick={() => onNavigate('dashboard')}
@@ -1290,7 +1321,7 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
       </div>
 
       {/* 3. 🟢 RIGHT PREVIEW REBRANDED */}
-      <div className="w-[48%] bg-slate-100 flex flex-col shrink-0 relative border-l border-slate-200">
+      <div className="hidden lg:flex lg:w-[48%] bg-slate-100 flex-col shrink-0 relative border-l border-slate-200">
         {/* Fixed Header Bar at the top of the preview pane */}
         <div className="bg-slate-100/90 backdrop-blur-md px-12 py-4 z-30 flex justify-end items-center border-b border-slate-200/60 shadow-sm shrink-0">
           <button
