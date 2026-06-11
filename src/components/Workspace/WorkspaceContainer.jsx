@@ -923,8 +923,10 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
         />
       )}
 
-      {/* 1. 🟢 SIDEBAR REBRANDED */}
-      <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-100 flex flex-col p-6 gap-3 shrink-0 shadow-2xl transition-transform duration-300 transform md:translate-x-0 md:relative ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div 
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-100 flex flex-col p-6 gap-3 shrink-0 shadow-2xl transition-transform duration-300 transform md:translate-x-0 md:relative ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{ flexDirection: 'column' }}
+      >
         <button
           onClick={() => {
             setIsMenuOpen(false);
@@ -940,7 +942,7 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
           </span>
         </button>
 
-        <nav className="flex flex-row md:flex-col gap-2.5 overflow-x-auto md:overflow-x-visible whitespace-nowrap md:whitespace-normal pb-2 md:pb-0 flex-1 scrollbar-none">
+        <nav className="flex flex-col gap-2.5 flex-1" style={{ flexDirection: 'column' }}>
           {tabs.map((tab) => (
             <button
               key={tab.name}
@@ -948,8 +950,8 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
                 setActiveTab(tab.name);
                 setIsMenuOpen(false);
               }}
-              className={`inline-flex md:flex items-center gap-3 text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 shrink-0 ${activeTab === tab.name
-                ? 'bg-[#10B981] text-white shadow-xl shadow-emerald-900/40 translate-x-0 md:translate-x-1'
+              className={`flex items-center gap-3 w-full text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === tab.name
+                ? 'bg-[#10B981] text-white shadow-xl shadow-emerald-900/40 translate-x-1'
                 : 'text-slate-500 hover:bg-slate-800 hover:text-slate-100'
                 }`}
             >
@@ -1020,12 +1022,12 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
           </div>
 
           {/* Global Theme & Accent Toolbar */}
-          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-3xl border border-slate-100 mb-8 relative">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-3xl border border-slate-100 mb-8 relative overflow-x-auto whitespace-nowrap scrollbar-none gap-4">
+            <div className="flex items-center gap-2 shrink-0">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2">Workspace Theme</span>
             </div>
             
-            <div className="flex items-center gap-2 relative">
+            <div className="flex items-center gap-2 relative shrink-0">
               <button
                 onClick={() => {
                   setShowTemplatePicker(prev => !prev);
