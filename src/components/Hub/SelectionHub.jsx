@@ -3,26 +3,30 @@ import { Trash2, FileText } from 'lucide-react';
 
 export default function SelectionHub({ setCurrentView, currentUser, setView, setUploadedData }) {
   // Fallback name if the user state isn't fully synced yet
-  const userName = currentUser?.name || "Uthman";
+  const userName = currentUser?.fullName || currentUser?.name || "User";
   const fileInputRef = useRef(null);
   const [resumes, setResumes] = useState([]);
 
+  const storageKey = currentUser?.email ? `saved_resumes_${currentUser.email.toLowerCase()}` : 'saved_resumes';
+
   useEffect(() => {
-    const saved = localStorage.getItem('saved_resumes');
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         setResumes(JSON.parse(saved));
       } catch (e) {
         console.error("Error loading saved resumes", e);
       }
+    } else {
+      setResumes([]); // default to empty for new user
     }
-  }, []);
+  }, [storageKey]);
 
   const handleDelete = (id) => {
     if (confirm("Are you sure you want to delete this resume?")) {
       const updated = resumes.filter(r => r.id !== id);
       setResumes(updated);
-      localStorage.setItem('saved_resumes', JSON.stringify(updated));
+      localStorage.setItem(storageKey, JSON.stringify(updated));
     }
   };
 

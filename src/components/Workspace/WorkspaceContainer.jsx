@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useResume } from '../../context/ResumeContext';
 import { Sparkles, User, Briefcase, GraduationCap, Award, Trash2, Plus, Mail, Phone, MapPin, FileText, Wand2, Upload, LogOut, Palette, Grid3x2, Check, Download, ArrowLeft } from 'lucide-react';
 
-export const WorkspaceContainer = ({ onNavigate, initialData }) => {
+export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => {
   const { currentResume, setCurrentResume, updatePersonalInfo, addItem, updateItem, removeItem, updateSummary } = useResume();
   const [activeTab, setActiveTab] = useState('Personal Info');
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -84,7 +84,8 @@ export const WorkspaceContainer = ({ onNavigate, initialData }) => {
 
   const handleSaveCurrentTabData = () => {
     try {
-      const savedResumesRaw = localStorage.getItem('saved_resumes');
+      const storageKey = currentUser?.email ? `saved_resumes_${currentUser.email.toLowerCase()}` : 'saved_resumes';
+      const savedResumesRaw = localStorage.getItem(storageKey);
       let savedResumes = [];
       if (savedResumesRaw) {
         try {
@@ -129,7 +130,7 @@ export const WorkspaceContainer = ({ onNavigate, initialData }) => {
         savedResumes.unshift(resumeRecord);
       }
 
-      localStorage.setItem('saved_resumes', JSON.stringify(savedResumes));
+      localStorage.setItem(storageKey, JSON.stringify(savedResumes));
       alert("Progress saved successfully!");
     } catch (err) {
       console.error(err);
@@ -163,7 +164,8 @@ export const WorkspaceContainer = ({ onNavigate, initialData }) => {
         }
       };
 
-      const existingResumes = JSON.parse(localStorage.getItem('saved_resumes') || '[]');
+      const storageKey = currentUser?.email ? `saved_resumes_${currentUser.email.toLowerCase()}` : 'saved_resumes';
+      const existingResumes = JSON.parse(localStorage.getItem(storageKey) || '[]');
       const existingIdx = existingResumes.findIndex(r => r.id === resumeId);
       let updatedResumes;
       if (existingIdx > -1) {
@@ -172,7 +174,7 @@ export const WorkspaceContainer = ({ onNavigate, initialData }) => {
       } else {
         updatedResumes = [newResumeRecord, ...existingResumes];
       }
-      localStorage.setItem('saved_resumes', JSON.stringify(updatedResumes));
+      localStorage.setItem(storageKey, JSON.stringify(updatedResumes));
 
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
       

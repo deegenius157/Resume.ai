@@ -22,10 +22,32 @@ function App() {
     return [{ fullName: "Uthman", email: "geniusuthman@gmail.com", password: "password123" }];
   });
 
+  // Track active logged-in user
+  const [currentUser, setCurrentUser] = useState(() => {
+    const savedUser = localStorage.getItem('resume_builder_current_user');
+    if (savedUser) {
+      try {
+        return JSON.parse(savedUser);
+      } catch (e) {
+        console.error("Error parsing current user:", e);
+      }
+    }
+    return null;
+  });
+
   // Automatically sync to localStorage whenever the users array changes
   useEffect(() => {
     localStorage.setItem('resume_builder_users', JSON.stringify(users));
   }, [users]);
+
+  // Sync active user to localStorage
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('resume_builder_current_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('resume_builder_current_user');
+    }
+  }, [currentUser]);
 
   const [uploadedData, setUploadedData] = useState(null);
 
@@ -40,6 +62,7 @@ function App() {
             onNavigate={setCurrentView}
             users={users}
             setUsers={setUsers}
+            setCurrentUser={setCurrentUser}
           />
         );
 
@@ -49,6 +72,7 @@ function App() {
             onNavigate={setCurrentView}
             users={users}
             setUsers={setUsers}
+            setCurrentUser={setCurrentUser}
           />
         );
       case 'dashboard':
@@ -56,7 +80,7 @@ function App() {
         return (
           <SelectionHub
             setCurrentView={setCurrentView}
-            currentUser={users?.[users.length - 1]}
+            currentUser={currentUser}
             setUploadedData={setUploadedData}
           />
         );
@@ -65,6 +89,7 @@ function App() {
           <WorkspaceContainer
             onNavigate={setCurrentView}
             initialData={uploadedData}
+            currentUser={currentUser}
           />
         );
       default:

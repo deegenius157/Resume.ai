@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, Mail, Lock, User, ChevronLeft } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
-export const LoginView = ({ onNavigate, users }) => {
+export const LoginView = ({ onNavigate, users, setCurrentUser }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +16,9 @@ export const LoginView = ({ onNavigate, users }) => {
     );
 
     if (user) {
+      if (typeof setCurrentUser === 'function') {
+        setCurrentUser(user);
+      }
       onNavigate('selection');
     } else {
       alert("❌ Invalid email or password. Access Denied!");
@@ -140,7 +143,7 @@ export const LoginView = ({ onNavigate, users }) => {
   );
 };
 
-export const SignupView = ({ onNavigate, users, setUsers }) => {
+export const SignupView = ({ onNavigate, users, setUsers, setCurrentUser }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -178,12 +181,15 @@ export const SignupView = ({ onNavigate, users, setUsers }) => {
     if (typeof setUsers === 'function') {
       setUsers([...(users || []), newUser]);
     }
+    if (typeof setCurrentUser === 'function') {
+      setCurrentUser(newUser);
+    }
 
     // Trigger welcome email dispatch
     sendWelcomeEmail(email.toLowerCase(), fullName);
 
-    alert("✅ Account created successfully! A confirmation email has been sent to you.");
-    onNavigate('login');
+    alert("✅ Account created successfully! A welcome email has been sent to you.");
+    onNavigate('selection');
   };
 
   return (
