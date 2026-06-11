@@ -153,14 +153,17 @@ export const SignupView = ({ onNavigate, users, setUsers }) => {
       reply_to: 'infooesume@gmail.com'
     };
 
-    emailjs.send(
-      'YOUR_SERVICE_ID', // Replace with EmailJS service ID
-      'YOUR_WELCOME_TEMPLATE_ID', // Replace with EmailJS template ID
-      templateParams,
-      'YOUR_PUBLIC_KEY' // Replace with EmailJS public key
-    )
-    .then(() => console.log('Welcome email sent successfully!'))
-    .catch((err) => console.error('Email error:', err));
+    const serviceId = (import.meta.env.VITE_EMAILJS_SERVICE_ID || '').trim();
+    const templateId = (import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '').trim();
+    const publicKey = (import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '').trim();
+
+    if (serviceId && templateId && publicKey) {
+      emailjs.send(serviceId, templateId, templateParams, publicKey)
+        .then(() => console.log('Welcome email sent successfully!'))
+        .catch((err) => console.error('Email error:', err));
+    } else {
+      console.warn('EmailJS environment variables are missing. Welcome email not sent.');
+    }
   };
 
   const handleSignUpSubmit = (e) => {
