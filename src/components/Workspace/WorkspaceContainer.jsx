@@ -13,6 +13,7 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mobileView, setMobileView] = useState('edit');
   const resumeCanvasRef = useRef(null);
 
   useEffect(() => {
@@ -939,7 +940,7 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
           </span>
         </button>
 
-        <nav className="flex flex-col gap-2.5 flex-1">
+        <nav className="flex flex-row md:flex-col gap-2.5 overflow-x-auto md:overflow-x-visible whitespace-nowrap md:whitespace-normal pb-2 md:pb-0 flex-1 scrollbar-none">
           {tabs.map((tab) => (
             <button
               key={tab.name}
@@ -947,8 +948,8 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
                 setActiveTab(tab.name);
                 setIsMenuOpen(false);
               }}
-              className={`flex items-center gap-3 w-full text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === tab.name
-                ? 'bg-[#10B981] text-white shadow-xl shadow-emerald-900/40 translate-x-1'
+              className={`inline-flex md:flex items-center gap-3 text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 shrink-0 ${activeTab === tab.name
+                ? 'bg-[#10B981] text-white shadow-xl shadow-emerald-900/40 translate-x-0 md:translate-x-1'
                 : 'text-slate-500 hover:bg-slate-800 hover:text-slate-100'
                 }`}
             >
@@ -970,7 +971,7 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
       </div>
 
       {/* 2. 🟢 MIDDLE EDITOR REBRANDED */}
-      <div className="flex-1 bg-white p-6 md:p-12 overflow-y-auto shadow-inner flex flex-col border-r border-slate-100">
+      <div className={`flex-1 bg-white p-6 md:p-12 overflow-y-auto shadow-inner border-r border-slate-100 pb-24 lg:pb-12 ${mobileView === 'edit' ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'}`}>
         <div className="max-w-2xl mx-auto w-full">
           {/* Mobile Menu Top Bar */}
           <div className="flex items-center justify-between md:hidden mb-6">
@@ -1321,7 +1322,7 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
       </div>
 
       {/* 3. 🟢 RIGHT PREVIEW REBRANDED */}
-      <div className="hidden lg:flex lg:w-[48%] bg-slate-100 flex-col shrink-0 relative border-l border-slate-200">
+      <div className={`bg-slate-100 flex-col shrink-0 relative border-l border-slate-200 pb-24 lg:pb-0 ${mobileView === 'preview' ? 'flex w-full' : 'hidden lg:flex lg:w-[48%]'}`}>
         {/* Fixed Header Bar at the top of the preview pane */}
         <div className="bg-slate-100/90 backdrop-blur-md px-12 py-4 z-30 flex justify-end items-center border-b border-slate-200/60 shadow-sm shrink-0">
           <button
@@ -1400,6 +1401,31 @@ export const WorkspaceContainer = ({ onNavigate, initialData, currentUser }) => 
           </div>
         </div>
       </div>
+
+      {/* Sleek mobile sticky toggle bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200/80 p-3 flex justify-around items-center z-50 lg:hidden shadow-lg">
+        <button
+          onClick={() => setMobileView('edit')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+            mobileView === 'edit'
+              ? 'bg-[#10B981] text-white shadow-lg shadow-emerald-500/20 active:scale-95'
+              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+          }`}
+        >
+          <span>📝</span> Edit Form
+        </button>
+        <button
+          onClick={() => setMobileView('preview')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+            mobileView === 'preview'
+              ? 'bg-[#10B981] text-white shadow-lg shadow-emerald-500/20 active:scale-95'
+              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+          }`}
+        >
+          <span>👁️</span> Live Preview
+        </button>
+      </div>
+
     </div>
   );
 };
