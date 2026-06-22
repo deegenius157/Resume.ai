@@ -41,53 +41,78 @@ const stripHtml = (str) => {
 };
 
 async function fetchAndUpsertJobs() {
-  console.log('🔄 Initiating Adzuna fetch process...');
-  const searchWhat = 'remote tech';
-  const page = 1;
-  const adzunaUrl = `https://api.adzuna.com/v1/api/jobs/us/search/${page}?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_APP_KEY}&results_per_page=30&what=${encodeURIComponent(searchWhat)}`;
+  console.log('🔄 Initiating Adzuna fetch process for African tech roles...');
+  const countries = ['ng', 'za', 'ke'];
+  const keywords = ['Software', 'Developer', 'Design', 'Data'];
+  const resultsPerPage = 15;
+  let allMappedJobs = [];
+
+  for (const country of countries) {
+    for (const keyword of keywords) {
+      console.log(`📡 Fetching ${keyword} jobs in ${country.toUpperCase()}...`);
+      const page = 1;
+      const adzunaUrl = `https://api.adzuna.com/v1/api/jobs/${country}/search/${page}?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_APP_KEY}&results_per_page=${resultsPerPage}&what=${encodeURIComponent(keyword)}`;
+
+      try {
+        const response = await fetch(adzunaUrl);
+        if (!response.ok) {
+          console.warn(`⚠️ Warning: Adzuna API responded with status ${response.status} for ${country}/${keyword}`);
+          continue;
+        }
+
+        const data = await response.json();
+        const rawJobs = data.results || [];
+        console.log(`✅ Fetched ${rawJobs.length} raw jobs for ${keyword} in ${country.toUpperCase()}.`);
+
+        // Map raw jobs to our postgres database schema
+        const mappedJobs = rawJobs.map(job => {
+          let loc = job.location?.display_name || 'Remote';
+          if (loc.toLowerCase().includes('remote') || loc.toLowerCase().includes('worldwide')) {
+            loc = 'Worldwide (Remote)';
+          } else {
+            loc = `${loc}, ${country.toUpperCase()}`;
+          }
+
+          return {
+            title: stripHtml(job.title),
+            company: job.company?.display_name || 'Hiring Company',
+            url: job.redirect_url,
+            description: stripHtml(job.description),
+            category: job.category?.label || 'Technology',
+            location: loc,
+            created_at: job.created ? new Date(job.created).toISOString() : new Date().toISOString()
+          };
+        });
+
+        allMappedJobs.push(...mappedJobs);
+        // Delay to respect API limits
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (err) {
+        console.error(`❌ Error fetching jobs for ${country}/${keyword}:`, err.message);
+      }
+    }
+  }
 
   try {
-    const response = await fetch(adzunaUrl);
-    if (!response.ok) {
-      throw new Error(`Adzuna API responded with status ${response.status}`);
+    // Filter duplicates locally by URL
+    const uniqueJobsMap = new Map();
+    for (const job of allMappedJobs) {
+      uniqueJobsMap.set(job.url, job);
     }
+    const uniqueMappedJobs = Array.from(uniqueJobsMap.values());
+    console.log(`✨ Total unique jobs fetched: ${uniqueMappedJobs.length}`);
 
-    const data = await response.json();
-    const rawJobs = data.results || [];
-    console.log(`✅ Successfully fetched ${rawJobs.length} raw jobs from Adzuna.`);
-
-    if (rawJobs.length === 0) {
+    if (uniqueMappedJobs.length === 0) {
       console.log('No jobs found to upsert.');
       return;
     }
-
-    // Map raw jobs to our postgres database schema
-    const mappedJobs = rawJobs.map(job => {
-      // Normalize location
-      let loc = job.location?.display_name || 'Remote';
-      if (loc.toLowerCase().includes('remote') || loc.toLowerCase().includes('worldwide')) {
-        loc = 'Worldwide (Remote)';
-      } else {
-        loc = 'Remote (Worldwide)';
-      }
-
-      return {
-        title: stripHtml(job.title),
-        company: job.company?.display_name || 'Hiring Company',
-        url: job.redirect_url,
-        description: stripHtml(job.description),
-        category: job.category?.label || 'Technology',
-        location: loc,
-        created_at: job.created ? new Date(job.created).toISOString() : new Date().toISOString()
-      };
-    });
 
     console.log('⚡ Upserting jobs into Supabase...');
 
     // Use ignoreDuplicates: true which translates to ON CONFLICT (url) DO NOTHING
     const { data: upsertedData, error } = await supabase
       .from('jobs')
-      .upsert(mappedJobs, { onConflict: 'url', ignoreDuplicates: true });
+      .upsert(uniqueMappedJobs, { onConflict: 'url', ignoreDuplicates: true });
 
     if (error) {
       throw error;
