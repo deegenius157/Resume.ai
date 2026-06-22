@@ -3,6 +3,15 @@ const path = require('path');
 const Parser = require('rss-parser');
 const { createClient } = require('@supabase/supabase-js');
 
+// Polyfill WebSocket for Node.js compatibility (Node v20)
+if (!global.WebSocket) {
+  try {
+    global.WebSocket = require('ws');
+  } catch (e) {
+    console.warn('⚠️ Warning: ws module not found. WebSocket polyfill skipped.');
+  }
+}
+
 // 1. Load environment variables from .env.local if present
 require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env.local') });
@@ -17,7 +26,10 @@ if (!SUPABASE_KEY) {
 }
 
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false }
+});
+
 
 const parser = new Parser({
   customFields: {

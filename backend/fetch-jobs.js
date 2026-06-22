@@ -2,10 +2,18 @@ const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
+// Polyfill WebSocket for Node.js compatibility (Node v20)
+if (!global.WebSocket) {
+  try {
+    global.WebSocket = require('ws');
+  } catch (e) {
+    console.warn('⚠️ Warning: ws module not found. WebSocket polyfill skipped.');
+  }
+}
+
 // 1. Load environment variables from .env.local if present
 require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env.local') });
-
 
 
 // 2. Configuration Parameters
@@ -21,7 +29,10 @@ if (SUPABASE_KEY === 'sb_publishable_QhnNbsU439dTjRHdaIpjBw_LqYPMBHH') {
   console.warn('⚠️ Warning: Using fallback client anon key. Inserts might fail if RLS does not allow public inserts.');
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false }
+});
+
 
 // Helper function to strip HTML tags from Adzuna fields
 const stripHtml = (str) => {
