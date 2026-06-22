@@ -2,24 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
-// 1. Manually parse .env.local if present to load environment variables
-const envPath = path.resolve(__dirname, '../.env.local');
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, 'utf-8');
-  envContent.split(/\r?\n/).forEach(line => {
-    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-    if (match) {
-      const key = match[1];
-      let val = match[2] || '';
-      if (val.startsWith('"') && val.endsWith('"')) {
-        val = val.slice(1, -1);
-      } else if (val.startsWith("'") && val.endsWith("'")) {
-        val = val.slice(1, -1);
-      }
-      process.env[key] = val.trim();
-    }
-  });
-}
+// 1. Load environment variables from .env.local if present
+require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env.local') });
+
+
 
 // 2. Configuration Parameters
 const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID || '80388a5b';
