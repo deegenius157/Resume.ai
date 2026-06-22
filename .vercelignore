@@ -1,0 +1,4 @@
+# Ignore backend files so Vercel does not try to compile or run them
+backend/
+supabase/
+.github/
