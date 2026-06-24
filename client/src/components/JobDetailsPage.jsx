@@ -100,7 +100,11 @@ export default function JobDetailsPage() {
     logMetric('proceed_to_external_apply', { job_id: job.job_id || job.id, title: jobTitle });
     setShowOptimizeModal(false);
     if (job.redirect_url) {
-      window.open(job.redirect_url, '_blank', 'noopener,noreferrer');
+      if (job.redirect_url.startsWith('mailto:')) {
+        window.location.href = job.redirect_url;
+      } else {
+        window.open(job.redirect_url, '_blank', 'noopener,noreferrer');
+      }
     }
   };
 
@@ -542,6 +546,11 @@ export default function JobDetailsPage() {
               <p className="text-sm font-semibold text-slate-650 leading-relaxed">
                 Would you like to analyze and optimize your CV with our AI tool before applying to increase your chances?
               </p>
+              {job.redirect_url && job.redirect_url.startsWith('mailto:') && (
+                <div className="text-xs font-bold text-slate-500 bg-slate-50 border border-slate-100 rounded-xl p-3 mt-3">
+                  📧 Send your CV directly to: <strong className="text-slate-800 select-all">{job.redirect_url.replace('mailto:', '')}</strong>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-3.5 pt-2">

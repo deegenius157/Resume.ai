@@ -147,8 +147,8 @@ async function extractSourceUrlAndDeadline(wrapperUrl) {
 }
 
 async function fetchAndUpsertJobs() {
-  console.log('🔄 Initiating MyJobMag detailed RSS fetch process...');
-  const feedUrl = 'https://www.myjobmag.com/jobsxml_by_categories.xml';
+  console.log('🔄 Initiating MyJobMag detailed RSS fetch process for ICT & Technology roles...');
+  const feedUrl = 'https://www.myjobmag.com/jobsxml_by_categories.xml?cat=ict-computer';
   
   try {
     const feed = await parser.parseURL(feedUrl);
