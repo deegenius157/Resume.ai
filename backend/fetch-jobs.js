@@ -1,5 +1,6 @@
-const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const Parser = require('rss-parser');
 const { createClient } = require('@supabase/supabase-js');
 
 // Polyfill WebSocket for Node.js compatibility (Node v20)
@@ -15,116 +16,204 @@ if (!global.WebSocket) {
 require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env.local') });
 
-
-// 2. Configuration Parameters
-const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID || '80388a5b';
-const ADZUNA_APP_KEY = process.env.ADZUNA_APP_KEY || '734f6394a33847dd19195ed41ab7fa1d';
-
-
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://tkbibprszkrwgtmnexaz.supabase.co';
-// service_role key is preferred for backend inserts. Fallback to publishing key if not set.
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || 'sb_publishable_QhnNbsU439dTjRHdaIpjBw_LqYPMBHH';
-
-if (SUPABASE_KEY === 'sb_publishable_QhnNbsU439dTjRHdaIpjBw_LqYPMBHH') {
-  console.warn('⚠️ Warning: Using fallback client anon key. Inserts might fail if RLS does not allow public inserts.');
-}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false }
 });
 
+const parser = new Parser();
 
-// Helper function to strip HTML tags from Adzuna fields
-const stripHtml = (str) => {
-  if (!str) return '';
-  return str.replace(/<\/?[^>]+(>|$)/g, '').trim();
-};
-
-async function fetchAndUpsertJobs() {
-  console.log('🔄 Initiating Adzuna fetch process for African tech roles...');
-  const countries = ['ng', 'za', 'ke'];
-  const keywords = ['Software', 'Developer', 'Design', 'Data'];
-  const resultsPerPage = 15;
-  let allMappedJobs = [];
-
-  for (const country of countries) {
-    for (const keyword of keywords) {
-      console.log(`📡 Fetching ${keyword} jobs in ${country.toUpperCase()}...`);
-      const page = 1;
-      const adzunaUrl = `https://api.adzuna.com/v1/api/jobs/${country}/search/${page}?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_APP_KEY}&results_per_page=${resultsPerPage}&what=${encodeURIComponent(keyword)}`;
-
-      try {
-        const response = await fetch(adzunaUrl);
-        if (!response.ok) {
-          console.warn(`⚠️ Warning: Adzuna API responded with status ${response.status} for ${country}/${keyword}`);
-          continue;
-        }
-
-        const data = await response.json();
-        const rawJobs = data.results || [];
-        console.log(`✅ Fetched ${rawJobs.length} raw jobs for ${keyword} in ${country.toUpperCase()}.`);
-
-        // Map raw jobs to our postgres database schema
-        const mappedJobs = rawJobs.map(job => {
-          let loc = job.location?.display_name || 'Remote';
-          if (loc.toLowerCase().includes('remote') || loc.toLowerCase().includes('worldwide')) {
-            loc = 'Worldwide (Remote)';
-          } else {
-            loc = `${loc}, ${country.toUpperCase()}`;
-          }
-
-          return {
-            title: stripHtml(job.title),
-            company: job.company?.display_name || 'Hiring Company',
-            url: job.redirect_url,
-            description: stripHtml(job.description),
-            category: job.category?.label || 'Technology',
-            location: loc,
-            created_at: job.created ? new Date(job.created).toISOString() : new Date().toISOString()
-          };
-        });
-
-        allMappedJobs.push(...mappedJobs);
-        // Delay to respect API limits
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (err) {
-        console.error(`❌ Error fetching jobs for ${country}/${keyword}:`, err.message);
+// Helper to split description, requirements, and benefits
+function parseDescription(rawDesc) {
+  if (!rawDesc) return { description: '', requirements: '', benefits: '' };
+  
+  // Clean up whitespace and carriage returns
+  const cleanText = rawDesc.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  
+  // Define split keywords
+  const splitKeywords = [
+    'requirement', 'requirements', 
+    'qualification', 'qualifications', 
+    'expectations', 'requirement:', 
+    'requirements:', 'qualification:', 
+    'qualifications:', 'key requirements'
+  ];
+  
+  let splitIndex = -1;
+  let matchedKeyword = '';
+  
+  for (const keyword of splitKeywords) {
+    const idx = cleanText.toLowerCase().indexOf('\n' + keyword);
+    if (idx !== -1) {
+      if (splitIndex === -1 || idx < splitIndex) {
+        splitIndex = idx;
+        matchedKeyword = keyword;
       }
     }
-  }
-
-  try {
-    // Filter duplicates locally by URL
-    const uniqueJobsMap = new Map();
-    for (const job of allMappedJobs) {
-      uniqueJobsMap.set(job.url, job);
+    const idxDirect = cleanText.toLowerCase().indexOf(keyword);
+    if (idxDirect === 0) {
+      splitIndex = 0;
+      matchedKeyword = keyword;
     }
-    const uniqueMappedJobs = Array.from(uniqueJobsMap.values());
-    console.log(`✨ Total unique jobs fetched: ${uniqueMappedJobs.length}`);
+  }
+  
+  let description = cleanText;
+  let requirements = 'Relevant qualifications and experience are required for this role.';
+  let benefits = 'Discussed during the interview stage.';
+  
+  if (splitIndex !== -1) {
+    description = cleanText.substring(0, splitIndex).trim();
+    requirements = cleanText.substring(splitIndex).replace(new RegExp(`^${matchedKeyword}:?\\s*`, 'i'), '').trim();
+  }
+  
+  // Try to find benefits keyword in description or requirements
+  const benefitsKeywords = ['benefits', 'what we offer', 'remuneration', 'offer', 'compensation'];
+  for (const bKeyword of benefitsKeywords) {
+    const bIdx = requirements.toLowerCase().indexOf('\n' + bKeyword);
+    if (bIdx !== -1) {
+      benefits = requirements.substring(bIdx).replace(new RegExp(`^\\n*${bKeyword}:?\\s*`, 'i'), '').trim();
+      requirements = requirements.substring(0, bIdx).trim();
+      break;
+    }
+  }
+  
+  return { description, requirements, benefits };
+}
 
-    if (uniqueMappedJobs.length === 0) {
-      console.log('No jobs found to upsert.');
+// Helper to fetch wrapper page and extract email/apply link + deadline date
+async function extractSourceUrlAndDeadline(wrapperUrl) {
+  let sourceUrl = wrapperUrl;
+  let deadline = null;
+  
+  try {
+    const res = await fetch(wrapperUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const html = await res.text();
+    
+    // 1. Extract deadline from json-ld (validThrough)
+    const validThroughMatch = html.match(/"validThrough":\s*"([^"]+)"/i);
+    if (validThroughMatch) {
+      deadline = validThroughMatch[1].split('T')[0]; // YYYY-MM-DD
+    } else {
+      // Try regex for Deadline: ...
+      const deadlineMatch = html.match(/Deadline:<\/b>\s*([^<]+)/i);
+      if (deadlineMatch) {
+        const dlText = deadlineMatch[1].trim();
+        if (dlText.toLowerCase() !== 'not specified' && dlText.toLowerCase() !== 'not-specified') {
+          const parsedDate = new Date(dlText);
+          if (!isNaN(parsedDate.getTime())) {
+            deadline = parsedDate.toISOString().split('T')[0];
+          }
+        }
+      }
+    }
+    
+    // 2. Extract source_url (email or external apply link)
+    const methodIndex = html.toLowerCase().indexOf('method of application');
+    if (methodIndex !== -1) {
+      const methodHtml = html.substring(methodIndex, methodIndex + 2000);
+      
+      const emailMatch = methodHtml.match(/[\w.-]+@[\w.-]+\.[\w]+/i);
+      if (emailMatch) {
+        sourceUrl = `mailto:${emailMatch[0]}`;
+      } else {
+        const hrefMatches = methodHtml.match(/href="([^"]+)"/g) || [];
+        for (const m of hrefMatches) {
+          const href = m.match(/href="([^"]+)"/)[1];
+          if (href.startsWith('http') && !href.includes('myjobmag.com') && !href.includes('facebook') && !href.includes('twitter') && !href.includes('linkedin')) {
+            sourceUrl = href;
+            break;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`⚠️ Failed to parse wrapper page details for ${wrapperUrl}:`, err.message);
+  }
+  
+  if (!deadline) {
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 30);
+    deadline = defaultDate.toISOString().split('T')[0];
+  }
+  
+  return { sourceUrl, deadline };
+}
+
+async function fetchAndUpsertJobs() {
+  console.log('🔄 Initiating MyJobMag detailed RSS fetch process...');
+  const feedUrl = 'https://www.myjobmag.com/jobsxml_by_categories.xml';
+  
+  try {
+    const feed = await parser.parseURL(feedUrl);
+    const rawItems = feed.items || [];
+    console.log(`✅ Successfully fetched ${rawItems.length} raw jobs from MyJobMag.`);
+    
+    if (rawItems.length === 0) {
+      console.log('No jobs found in feed.');
       return;
     }
-
+    
+    // Limit to first 25 items to run quickly, respect rate limits, and avoid execution timeouts
+    const itemsToProcess = rawItems.slice(0, 25);
+    console.log(`📡 Scraping application endpoints and deadlines for ${itemsToProcess.length} jobs...`);
+    
+    const mappedJobs = [];
+    for (let i = 0; i < itemsToProcess.length; i++) {
+      const item = itemsToProcess[i];
+      console.log(`⏳ Processing [${i+1}/${itemsToProcess.length}]: ${item.title}`);
+      
+      const job_id = crypto.createHash('md5').update(item.link).digest('hex');
+      const { description, requirements, benefits } = parseDescription(item.description || item.content);
+      const { sourceUrl, deadline } = await extractSourceUrlAndDeadline(item.link);
+      
+      mappedJobs.push({
+        job_id,
+        title: item.title,
+        company: item.company || 'Hiring Company',
+        location: item.location || 'Remote',
+        description,
+        requirements,
+        benefits,
+        deadline,
+        source_url: sourceUrl,
+        category: item.categories?.join(', ') || 'Technology',
+        url: item.link, // Keep original url just in case
+        created_at: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString()
+      });
+      
+      // Delay briefly to be polite
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    // Local deduplication
+    const uniqueJobsMap = new Map();
+    for (const job of mappedJobs) {
+      uniqueJobsMap.set(job.job_id, job);
+    }
+    const uniqueMappedJobs = Array.from(uniqueJobsMap.values());
+    console.log(`✨ Deduplicated: ${uniqueMappedJobs.length} unique jobs ready to upsert.`);
+    
     console.log('⚡ Upserting jobs into Supabase...');
-
-    // Use ignoreDuplicates: true which translates to ON CONFLICT (url) DO NOTHING
-    const { data: upsertedData, error } = await supabase
+    const { data, error } = await supabase
       .from('jobs')
-      .upsert(uniqueMappedJobs, { onConflict: 'url', ignoreDuplicates: true });
-
+      .upsert(uniqueMappedJobs, { onConflict: 'job_id', ignoreDuplicates: true });
+      
     if (error) {
       throw error;
     }
-
+    
     console.log('🎉 Successfully completed job sync process. Duplicate entries were skipped.');
-
   } catch (error) {
     console.error('❌ Error executing job sync:', error.message);
     process.exit(1);
   }
 }
 
-// Execute the process
 fetchAndUpsertJobs();
