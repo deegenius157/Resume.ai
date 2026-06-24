@@ -171,7 +171,14 @@ async function fetchAndUpsertJobs() {
       
       const job_id = crypto.createHash('md5').update(item.link).digest('hex');
       const { description, requirements, benefits } = parseDescription(item.description || item.content);
-      const { sourceUrl, deadline } = await extractSourceUrlAndDeadline(item.link);
+      let { sourceUrl, deadline } = await extractSourceUrlAndDeadline(item.link);
+      
+      if (sourceUrl) {
+        sourceUrl = sourceUrl.trim();
+        if (!sourceUrl.startsWith('mailto:') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sourceUrl)) {
+          sourceUrl = `mailto:${sourceUrl}`;
+        }
+      }
       
       mappedJobs.push({
         job_id,

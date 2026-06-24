@@ -85,6 +85,13 @@ export default function AdminDashboard() {
       // Generate a unique job_id for manual entries to satisfy the unique constraint
       const uniqueManualId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      let finalSourceUrl = sourceUrl.trim() || null;
+      if (finalSourceUrl) {
+        if (!finalSourceUrl.startsWith('mailto:') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(finalSourceUrl)) {
+          finalSourceUrl = `mailto:${finalSourceUrl}`;
+        }
+      }
+
       const { data, error } = await supabase
         .from('jobs')
         .insert([
@@ -96,10 +103,10 @@ export default function AdminDashboard() {
             requirements: requirements.trim(),
             benefits: benefits.trim(),
             deadline: deadline || null,
-            source_url: sourceUrl.trim() || null,
+            source_url: finalSourceUrl,
             job_id: uniqueManualId,
             category: 'Private Job',
-            url: sourceUrl.trim() || `https://genusjob.com/jobs/${uniqueManualId}`,
+            url: finalSourceUrl || `https://genusjob.com/jobs/${uniqueManualId}`,
             created_at: new Date().toISOString()
           }
         ]);
@@ -308,10 +315,10 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target / Source Application URL</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target / Source Application URL or Email</label>
               <input
-                type="url"
-                placeholder="https://company-website.com/careers/apply-job-1"
+                type="text"
+                placeholder="https://company-website.com/careers/apply-job-1 or hr@company.com"
                 value={sourceUrl}
                 onChange={(e) => setSourceUrl(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl py-3.5 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
