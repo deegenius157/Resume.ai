@@ -76,6 +76,70 @@ const MOCK_JOBS = [
   }
 ];
 
+function formatParsedText(text) {
+  if (!text) return null;
+  const lines = text.split('\n');
+  const elements = [];
+  let currentList = [];
+  let inList = false;
+
+  const renderList = (key) => {
+    if (currentList.length === 0) return null;
+    const listItems = currentList.map((item, idx) => (
+      <li key={idx} className="list-disc pl-2 ml-4 mb-2 leading-relaxed text-slate-700 font-medium">
+        {item}
+      </li>
+    ));
+    currentList = [];
+    return <ul key={key} className="space-y-1 my-3 text-sm">{listItems}</ul>;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) {
+      if (inList) {
+        elements.push(renderList(`list-${i}`));
+        inList = false;
+      }
+      continue;
+    }
+
+    const bulletMatch = line.match(/^[-*•]\s*(.*)/);
+    const numberedMatch = line.match(/^\d+\.\s*(.*)/);
+
+    if (bulletMatch || numberedMatch) {
+      inList = true;
+      currentList.push(bulletMatch ? bulletMatch[1] : numberedMatch[1]);
+    } else {
+      if (inList) {
+        elements.push(renderList(`list-${i}`));
+        inList = false;
+      }
+
+      const isHeader = (line.length < 60 && line.endsWith(':')) || (line.length < 40 && line === line.toUpperCase() && /[A-Z]/.test(line));
+      if (isHeader) {
+        elements.push(
+          <h4 key={`h-${i}`} className="text-xs font-black uppercase tracking-wider text-slate-800 mt-6 mb-3 first:mt-2">
+            {line.replace(/:$/, '')}
+          </h4>
+        );
+      } else {
+        elements.push(
+          <p key={`p-${i}`} className="text-sm text-slate-700 leading-relaxed font-medium mb-4">
+            {line}
+          </p>
+        );
+      }
+    }
+  }
+
+  if (inList) {
+    elements.push(renderList(`list-final`));
+  }
+
+  return <div className="space-y-1">{elements}</div>;
+}
+
 export default function JobDetailsPage() {
   const { id } = useParams();
   const [job, setJob] = useState(null);
@@ -86,6 +150,15 @@ export default function JobDetailsPage() {
   const [showEmailInstructions, setShowEmailInstructions] = useState(false);
   const [emailCopied, setEmailCopied] = useState(false);
   const [subjectCopied, setSubjectCopied] = useState(false);
+
+  // Inline auth modal states
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authTab, setAuthTab] = useState('login'); // 'login' | 'signup'
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authFullName, setAuthFullName] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   const copyToClipboard = async (text, type) => {
     try {
@@ -111,10 +184,64 @@ export default function JobDetailsPage() {
     setShowOptimizeModal(true);
   };
 
-  const handleOptimizeCv = () => {
+  const handleOptimizeCv = async () => {
     logMetric('convert_to_ai_cv', { job_id: job.job_id || job.id, title: jobTitle });
     setShowOptimizeModal(false);
-    navigate('/');
+
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      localStorage.setItem('redirect_to_workspace', 'true');
+      navigate('/');
+    } else {
+      setAuthEmail('');
+      setAuthPassword('');
+      setAuthFullName('');
+      setAuthError('');
+      setAuthLoading(false);
+      setAuthTab('login');
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleAuthSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setAuthError('');
+    setAuthLoading(true);
+
+    try {
+      if (authTab === 'login') {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: authEmail.trim(),
+          password: authPassword
+        });
+        if (error) throw error;
+        
+        localStorage.setItem('redirect_to_workspace', 'true');
+        setShowAuthModal(false);
+        navigate('/');
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email: authEmail.trim(),
+          password: authPassword,
+          options: {
+            data: {
+              full_name: authFullName.trim()
+            }
+          }
+        });
+        if (error) throw error;
+        
+        alert("Account created successfully! Welcome to Genusjob.");
+        localStorage.setItem('redirect_to_workspace', 'true');
+        setShowAuthModal(false);
+        navigate('/');
+      }
+    } catch (err) {
+      setAuthError(err.message || 'Authentication failed. Please try again.');
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   const handleApplyDirectly = () => {
@@ -434,9 +561,9 @@ export default function JobDetailsPage() {
               <h3 className="text-sm font-black uppercase tracking-[0.25em] text-slate-800 border-b border-slate-200 pb-3">
                 Role Description
               </h3>
-              <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-wrap">
-                {jobDesc}
-              </p>
+              <div className="text-sm text-slate-700 leading-relaxed font-medium">
+                {formatParsedText(jobDesc)}
+              </div>
             </div>
 
             {job.requirements && (
@@ -444,9 +571,9 @@ export default function JobDetailsPage() {
                 <h3 className="text-sm font-black uppercase tracking-[0.25em] text-slate-800 border-b border-slate-200 pb-3">
                   Qualifications & Requirements
                 </h3>
-                <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-wrap">
-                  {job.requirements}
-                </p>
+                <div className="text-sm text-slate-700 leading-relaxed font-medium">
+                  {formatParsedText(job.requirements)}
+                </div>
               </div>
             )}
 
@@ -455,9 +582,9 @@ export default function JobDetailsPage() {
                 <h3 className="text-sm font-black uppercase tracking-[0.25em] text-slate-800 border-b border-slate-200 pb-3">
                   Benefits & Offer
                 </h3>
-                <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-wrap">
-                  {job.benefits}
-                </p>
+                <div className="text-sm text-slate-700 leading-relaxed font-medium">
+                  {formatParsedText(job.benefits)}
+                </div>
               </div>
             )}
           </div>
@@ -670,6 +797,119 @@ export default function JobDetailsPage() {
 
             <button 
               onClick={() => setShowOptimizeModal(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 transition cursor-pointer border-0 bg-transparent"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* INLINE AUTH MODAL OVERLAY */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl relative overflow-hidden space-y-6 animate-scale-in">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/[0.03] rounded-full blur-3xl pointer-events-none" />
+            
+            {/* Header / Logo */}
+            <div className="flex flex-col items-center justify-center text-center space-y-2">
+              <div className="bg-emerald-600 p-2 rounded-xl shadow-lg shadow-emerald-600/20">
+                <span className="text-white text-lg">✨</span>
+              </div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight mt-2">
+                {authTab === 'login' ? 'Sign In to Tailor Resume' : 'Create Account to Tailor'}
+              </h3>
+              <p className="text-xs font-semibold text-slate-400">
+                {authTab === 'login' 
+                  ? 'Sign in to access the AI CV optimization workspace.' 
+                  : 'Sign up to tailor your resume for this position.'}
+              </p>
+            </div>
+
+            {/* Switch Tabs */}
+            <div className="flex border-b border-slate-100">
+              <button
+                type="button"
+                onClick={() => { setAuthTab('login'); setAuthError(''); }}
+                className={`flex-1 pb-3 text-xs font-black uppercase tracking-wider transition ${
+                  authTab === 'login' ? 'border-b-2 border-emerald-600 text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuthTab('signup'); setAuthError(''); }}
+                className={`flex-1 pb-3 text-xs font-black uppercase tracking-wider transition ${
+                  authTab === 'signup' ? 'border-b-2 border-emerald-600 text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                Register
+              </button>
+            </div>
+
+            {/* Error Banner */}
+            {authError && (
+              <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs font-bold text-center">
+                ❌ {authError}
+              </div>
+            )}
+
+            {/* Auth Form */}
+            <form onSubmit={handleAuthSubmit} className="space-y-4">
+              {authTab === 'signup' && (
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Full Name</label>
+                  <input
+                    type="text"
+                    placeholder="John Doe"
+                    required
+                    value={authFullName}
+                    onChange={(e) => setAuthFullName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl py-3 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
+                  />
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Email Address</label>
+                <input
+                  type="email"
+                  placeholder="name@company.com"
+                  required
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl py-3 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl py-3 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-4 rounded-xl shadow-md transition duration-200 uppercase tracking-widest disabled:opacity-50 cursor-pointer border-0 mt-2"
+              >
+                {authLoading 
+                  ? 'Processing...' 
+                  : (authTab === 'login' ? 'Sign In To Account' : 'Create Free Account')}
+              </button>
+            </form>
+
+            <button
+              onClick={() => setShowAuthModal(false)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 transition cursor-pointer border-0 bg-transparent"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -34,6 +34,16 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (currentUser) {
+      const redirectToWorkspace = localStorage.getItem('redirect_to_workspace');
+      if (redirectToWorkspace === 'true') {
+        localStorage.removeItem('redirect_to_workspace');
+        setCurrentView('workspace');
+      }
+    }
+  }, [currentUser]);
+
   const [uploadedData, setUploadedData] = useState(null);
 
   // 1. THE REFACTORED CONDITIONAL ROUTER (Nicely closed)
