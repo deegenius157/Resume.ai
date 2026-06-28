@@ -25,6 +25,22 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 const parser = new Parser();
 
+// Helper to clean up Mojibake encoding corruption
+function cleanCorruptedText(text) {
+  if (!text) return '';
+  return text
+    .replace(/â€”/g, '—')
+    .replace(/â\x80\x94/g, '—')
+    .replace(/â€™/g, "'")
+    .replace(/â\x80\x99/g, "'")
+    .replace(/â\x80\x98/g, "'")
+    .replace(/â\x82\xa6/g, '₦')
+    .replace(/â‚¦/g, '₦')
+    .replace(/â\x80\x9c/g, '"')
+    .replace(/â\x80\x9d/g, '"')
+    .replace(/â\x80\xa2/g, '•');
+}
+
 // Helper to split description, requirements, and benefits
 function parseDescription(rawDesc) {
   if (!rawDesc) return { description: '', requirements: '', benefits: '' };
@@ -94,7 +110,9 @@ async function extractSourceUrlAndDeadline(wrapperUrl) {
       }
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const html = await res.text();
+    const arrayBuffer = await res.arrayBuffer();
+    const decoder = new TextDecoder('utf-8');
+    const html = decoder.decode(arrayBuffer);
     
     // 1. Extract deadline from json-ld (validThrough)
     const validThroughMatch = html.match(/"validThrough":\s*"([^"]+)"/i);
@@ -151,7 +169,16 @@ async function fetchAndUpsertJobs() {
   const feedUrl = 'https://www.myjobmag.com/jobsxml_by_categories.xml?cat=ict-computer';
   
   try {
-    const feed = await parser.parseURL(feedUrl);
+    const res = await fetch(feedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    if (!res.ok) throw new Error(`Feed fetch status ${res.status}`);
+    const xmlBuffer = await res.arrayBuffer();
+    const decoder = new TextDecoder('utf-8');
+    const xmlString = decoder.decode(xmlBuffer);
+    const feed = await parser.parseString(xmlString);
     const rawItems = feed.items || [];
     console.log(`✅ Successfully fetched ${rawItems.length} raw jobs from MyJobMag.`);
     
@@ -182,12 +209,12 @@ async function fetchAndUpsertJobs() {
       
       mappedJobs.push({
         job_id,
-        title: item.title,
-        company: item.company || 'Hiring Company',
-        location: item.location || 'Remote',
-        description,
-        requirements,
-        benefits,
+        title: cleanCorruptedText(item.title),
+        company: cleanCorruptedText(item.company || 'Hiring Company'),
+        location: cleanCorruptedText(item.location || 'Remote'),
+        description: cleanCorruptedText(description),
+        requirements: cleanCorruptedText(requirements),
+        benefits: cleanCorruptedText(benefits),
         deadline,
         source_url: sourceUrl,
         category: item.categories?.join(', ') || 'Technology',
