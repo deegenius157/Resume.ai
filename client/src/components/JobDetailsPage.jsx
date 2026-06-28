@@ -78,7 +78,22 @@ const MOCK_JOBS = [
 
 function formatParsedText(text) {
   if (!text) return null;
-  const lines = text.split('\n');
+
+  // 1. Decode HTML entities cleanly
+  let cleanText = text
+    .replace(/&amp;/g, '&')
+    .replace(/&bull;/g, '•')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&middot;/g, '·');
+
+  // 2. If it contains raw HTML elements, render them natively
+  const hasHtml = /<[a-z][\s\S]*>/i.test(cleanText);
+  if (hasHtml) {
+    return <div className="raw-html-content" dangerouslySetInnerHTML={{ __html: cleanText }} />;
+  }
+
+  // 3. Otherwise, use the line-splitting plain text rendering algorithm
+  const lines = cleanText.split('\n');
   const elements = [];
   let currentList = [];
   let inList = false;
