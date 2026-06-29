@@ -397,6 +397,53 @@ export default function JobDetailsPage() {
   }, [id]);
 
   useEffect(() => {
+    if (job) {
+      const jobTitle = job.title || 'Job Opportunity';
+      const companyName = job.company?.display_name || job.company || 'Hiring Company';
+      const location = job.location?.display_name || job.location || 'Remote';
+      document.title = `${jobTitle} at ${companyName} | GenusJob`;
+
+      // Update Meta Tags dynamically
+      const updateMetaTag = (property, content) => {
+        let el = document.querySelector(`meta[property="${property}"]`);
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute('property', property);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', content);
+      };
+
+      const updateNameMetaTag = (name, content) => {
+        let el = document.querySelector(`meta[name="${name}"]`);
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute('name', name);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', content);
+      };
+
+      const cleanTitle = `${jobTitle} | GenusJob`;
+      const cleanDesc = `Location: ${location} | Apply directly on GenusJob.`;
+
+      // Open Graph Metadata
+      updateMetaTag('og:title', cleanTitle);
+      updateMetaTag('og:description', cleanDesc);
+      updateMetaTag('og:type', 'website');
+      updateMetaTag('og:image', 'https://genusjob.com/og-banner.png');
+      updateMetaTag('og:url', window.location.href);
+
+      // Twitter Cards / General Metadata
+      updateNameMetaTag('description', cleanDesc);
+      updateMetaTag('twitter:title', cleanTitle);
+      updateMetaTag('twitter:description', cleanDesc);
+      updateMetaTag('twitter:image', 'https://genusjob.com/og-banner.png');
+      updateMetaTag('twitter:card', 'summary_large_image');
+    }
+  }, [job]);
+
+  useEffect(() => {
     if (!job) return;
 
     const jobTitle = job.title?.replace(/<\/?[^>]+(>|$)/g, '') || '';
