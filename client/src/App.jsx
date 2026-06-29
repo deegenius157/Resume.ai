@@ -13,6 +13,22 @@ import BlogDetailsPage from './components/BlogDetailsPage';
 import AdminDashboard from './components/AdminDashboard';
 
 
+const HomeView = ({ renderView, setCurrentView, currentUser }) => {
+  useEffect(() => {
+    const redirectToWorkspace = localStorage.getItem('redirect_to_workspace');
+    if (redirectToWorkspace === 'true') {
+      localStorage.removeItem('redirect_to_workspace');
+      if (currentUser) {
+        setCurrentView('workspace');
+      } else {
+        setCurrentView('login');
+      }
+    }
+  }, [currentUser, setCurrentView]);
+
+  return <div className="min-h-screen bg-white">{renderView()}</div>;
+};
+
 function App() {
   const [currentView, setCurrentView] = useState('landing');
   const [currentUser, setCurrentUser] = useState(null);
@@ -91,8 +107,7 @@ function App() {
     <ResumeProvider>
       <BrowserRouter>
         <Routes>
-          {/* Main SPA path */}
-          <Route path="/" element={<div className="min-h-screen bg-white">{renderView()}</div>} />
+          <Route path="/" element={<HomeView renderView={renderView} setCurrentView={setCurrentView} currentUser={currentUser} />} />
           
           {/* SEO Job Board & Blog routes */}
           <Route path="/jobs" element={<JobsPage />} />
