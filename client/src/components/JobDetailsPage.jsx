@@ -346,11 +346,15 @@ export default function JobDetailsPage() {
       }
 
       try {
-        const { data: dbJob, error } = await supabase
-          .from('jobs')
-          .select('*')
-          .or(`job_id.eq.${id},id.eq.${id}`)
-          .maybeSingle();
+        let queryBuilder = supabase.from('jobs').select('*');
+        const isInteger = /^\d+$/.test(id);
+        if (isInteger) {
+          queryBuilder = queryBuilder.or(`job_id.eq."${id}",id.eq.${id}`);
+        } else {
+          queryBuilder = queryBuilder.eq('job_id', id);
+        }
+
+        const { data: dbJob, error } = await queryBuilder.maybeSingle();
 
         if (error) throw error;
 
