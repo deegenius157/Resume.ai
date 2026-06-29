@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ResumeProvider } from './context/ResumeContext';
 import { WorkspaceContainer } from './components/Workspace/WorkspaceContainer';
 import { LandingPage } from './components/Landing/LandingPage';
@@ -111,12 +111,15 @@ function App() {
           
           {/* SEO Job Board & Blog routes */}
           <Route path="/jobs" element={<JobsPage />} />
-          <Route path="/jobs/:id" element={<JobDetailsPage />} />
+          <Route path="/jobs/:idSlug" element={<JobDetailsPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogDetailsPage />} />
           
           {/* Admin Dashboard */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+          {/* Catch-all Wildcard fallback route to prevent blank screen crash */}
+          <Route path="*" element={<Navigate to="/jobs" replace />} />
         </Routes>
       </BrowserRouter>
     </ResumeProvider>

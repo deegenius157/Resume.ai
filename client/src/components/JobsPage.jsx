@@ -75,6 +75,14 @@ const MOCK_JOBS = [
   }
 ];
 
+function slugify(text) {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+}
+
 export default function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
@@ -385,7 +393,7 @@ export default function JobsPage() {
 
                     <div className="shrink-0 w-full md:w-auto">
                       <Link 
-                        to={`/jobs/${cleanId}`}
+                        to={`/jobs/${cleanId}-${slugify(jobTitle)}`}
                         className="w-full md:w-auto block bg-slate-900 hover:bg-slate-800 text-white hover:text-emerald-400 border border-slate-950 font-black text-sm uppercase tracking-widest px-8 py-3.5 rounded-full text-center transition-all shadow-sm active:scale-95 cursor-pointer"
                       >
                         View Position

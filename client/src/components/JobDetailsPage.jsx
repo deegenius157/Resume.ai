@@ -188,7 +188,8 @@ function formatParsedText(text) {
 }
 
 export default function JobDetailsPage() {
-  const { id } = useParams();
+  const { idSlug } = useParams();
+  const id = idSlug ? idSlug.split('-')[0] : '';
   const [job, setJob] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
