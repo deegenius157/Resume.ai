@@ -300,6 +300,29 @@ export default function JobsPage() {
 
         {/* JOB CARDS LIST */}
         <div className="space-y-6">
+          {/* COMMUNITY CTA BANNER */}
+          <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20 rounded-[2.5rem] p-8 md:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 text-left relative overflow-hidden shadow-sm mt-2 mb-4">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/[0.03] rounded-full blur-3xl pointer-events-none" />
+            <div className="space-y-3 flex-1 relative z-10">
+              <h4 className="text-lg font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
+                🚀 Join the GenusJob Tech Community Hub!
+              </h4>
+              <p className="text-sm text-slate-650 font-medium leading-relaxed max-w-2xl">
+                Get real-time remote tech alerts, application deadlines, and free ATS resume optimization tips directly on your phone.
+              </p>
+            </div>
+            <div className="w-full md:w-auto shrink-0 relative z-10">
+              <a 
+                href="https://chat.whatsapp.com/F5e5bSS9rk5DTrTuWWt2jc?s=sw&p=i&mlu=2&amv=2"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full md:w-auto inline-block bg-[#10B981] hover:bg-emerald-500 text-white font-black text-xs py-4.5 px-7 rounded-2xl transition duration-200 uppercase tracking-widest shadow-md hover:shadow-emerald-500/20 cursor-pointer text-center border-0 no-underline"
+              >
+                Join WhatsApp Group
+              </a>
+            </div>
+          </div>
+
           <div className="flex justify-between items-center border-b border-slate-100 pb-6 mb-8">
             <div>
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-700">
