@@ -49,7 +49,10 @@ function cleanCorruptedText(text) {
     .replace(/&mdash;/g, "—")
     .replace(/&ldquo;/g, '"')
     .replace(/&rdquo;/g, '"')
-    .replace(/&nbsp;/g, ' ');
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#39;/g, "'")
+    .replace(/&#34;/g, '"')
+    .replace(/&quot;/g, '"');
 }
 
 // Helper to split description, requirements, and benefits
