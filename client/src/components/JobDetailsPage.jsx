@@ -76,11 +76,33 @@ const MOCK_JOBS = [
   }
 ];
 
+function cleanCorruptedText(text) {
+  if (!text) return '';
+  return text
+    .replace(/â€”/g, '—')
+    .replace(/â\x80\x94/g, '—')
+    .replace(/â€™/g, "'")
+    .replace(/â\x80\x99/g, "'")
+    .replace(/â\x80\x98/g, "'")
+    .replace(/â\x82\xa6/g, '₦')
+    .replace(/â‚¦/g, '₦')
+    .replace(/â¦/g, '₦')
+    .replace(/â\x80\x9c/g, '"')
+    .replace(/â\x80\x9d/g, '"')
+    .replace(/â\x80\xa2/g, '•')
+    .replace(/Â®/g, '®')
+    .replace(/â\x80\x93/g, '–')
+    .replace(/â€“/g, '–');
+}
+
 function formatParsedText(text) {
   if (!text) return null;
 
+  // 0. Clean encoding Mojibake
+  let cleanText = cleanCorruptedText(text);
+
   // 1. Decode HTML entities cleanly
-  let cleanText = text
+  cleanText = cleanText
     .replace(/&amp;/g, '&')
     .replace(/&bull;/g, '•')
     .replace(/&nbsp;/g, ' ')

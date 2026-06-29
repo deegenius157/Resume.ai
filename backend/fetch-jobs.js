@@ -36,9 +36,13 @@ function cleanCorruptedText(text) {
     .replace(/â\x80\x98/g, "'")
     .replace(/â\x82\xa6/g, '₦')
     .replace(/â‚¦/g, '₦')
+    .replace(/â¦/g, '₦')
     .replace(/â\x80\x9c/g, '"')
     .replace(/â\x80\x9d/g, '"')
-    .replace(/â\x80\xa2/g, '•');
+    .replace(/â\x80\xa2/g, '•')
+    .replace(/Â®/g, '®')
+    .replace(/â\x80\x93/g, '–')
+    .replace(/â€“/g, '–');
 }
 
 // Helper to split description, requirements, and benefits
@@ -237,7 +241,7 @@ async function fetchAndUpsertJobs() {
     console.log('⚡ Upserting jobs into Supabase...');
     const { data, error } = await supabase
       .from('jobs')
-      .upsert(uniqueMappedJobs, { onConflict: 'job_id', ignoreDuplicates: true });
+      .upsert(uniqueMappedJobs, { onConflict: 'job_id', ignoreDuplicates: false });
       
     if (error) {
       throw error;
