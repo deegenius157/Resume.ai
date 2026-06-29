@@ -92,7 +92,14 @@ function cleanCorruptedText(text) {
     .replace(/â\x80\xa2/g, '•')
     .replace(/Â®/g, '®')
     .replace(/â\x80\x93/g, '–')
-    .replace(/â€“/g, '–');
+    .replace(/â€“/g, '–')
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&ndash;/g, "–")
+    .replace(/&mdash;/g, "—")
+    .replace(/&ldquo;/g, '"')
+    .replace(/&rdquo;/g, '"')
+    .replace(/&nbsp;/g, ' ');
 }
 
 function formatParsedText(text) {
