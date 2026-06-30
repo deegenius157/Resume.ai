@@ -22,10 +22,72 @@ export default function AdminDashboard() {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Jobs listings states
+  const [dbJobs, setDbJobs] = useState([]);
+  const [fetchError, setFetchError] = useState('');
+
   // Auth states (for inline login if not authenticated)
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
+
+  const fetchJobs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setDbJobs(data || []);
+    } catch (err) {
+      console.error('Error fetching jobs:', err.message);
+      setFetchError(err.message);
+    }
+  };
+
+  const copySocialText = async (job) => {
+    const jobTitle = job.title || '';
+    const company = job.company || 'Hiring Company';
+    const location = job.location || 'Remote';
+    const rawReqs = job.requirements || '';
+    const requirementsSnippet = rawReqs.length > 180 
+      ? rawReqs.substring(0, 180) + '...' 
+      : rawReqs;
+
+    const slugify = (text) => {
+      if (!text) return '';
+      return text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
+    };
+
+    const cleanId = job.job_id || job.id || '';
+    const linkSlug = slugify(jobTitle);
+    const linkUrl = `https://www.genusjob.com/jobs/${cleanId}${linkSlug ? '-' + linkSlug : ''}`;
+
+    const socialSnippet = `🚀 NEW REMOTE JOB ALERT! 🚀
+
+📌 Role: ${jobTitle}
+🏢 Company: ${company}
+📍 Location: ${location}
+
+🔑 Key Requirements:
+${requirementsSnippet || 'Standard qualifications apply.'}
+
+🔗 Apply & Optimize your CV with our AI tool now:
+👉 ${linkUrl}
+
+#remotejobs #techjobs #careers #jobsearch #genusjob`;
+
+    try {
+      await navigator.clipboard.writeText(socialSnippet);
+      alert(`🎉 Social media text snippet copied to clipboard for "${jobTitle}"!`);
+    } catch (err) {
+      console.error('Failed to copy social text:', err);
+      alert('❌ Failed to copy to clipboard.');
+    }
+  };
 
   useEffect(() => {
     // Check initial session
@@ -43,6 +105,12 @@ export default function AdminDashboard() {
       subscription?.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (session) {
+      fetchJobs();
+    }
+  }, [session]);
 
   const handleAdminLogin = async (e) => {
     e.preventDefault();
@@ -114,6 +182,7 @@ export default function AdminDashboard() {
       if (error) throw error;
 
       setSuccessMsg('🎉 Job posting successfully created and saved in Supabase database!');
+      fetchJobs();
       
       // Reset form fields
       setTitle('');
@@ -370,6 +439,44 @@ export default function AdminDashboard() {
             </div>
 
           </form>
+
+          {/* Admin Jobs List & Social Media Text Generator */}
+          <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-12 shadow-sm space-y-6 text-left">
+            <div>
+              <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Active Listings ({dbJobs.length})</h2>
+              <p className="text-xs font-semibold text-slate-500 mt-1">View active careers postings and copy optimized social media sharing templates.</p>
+            </div>
+            
+            {fetchError && (
+              <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs font-bold text-center">
+                ❌ Error loading jobs: {fetchError}
+              </div>
+            )}
+
+            <div className="divide-y divide-slate-100 overflow-hidden max-h-[500px] overflow-y-auto pr-2">
+              {dbJobs.length === 0 ? (
+                <p className="text-xs font-semibold text-slate-400 py-8 text-center uppercase tracking-widest">No active listings found in database.</p>
+              ) : (
+                dbJobs.map((j) => (
+                  <div key={j.id || j.job_id} className="py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 first:pt-0 last:pb-0">
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <h4 className="text-sm font-black text-slate-800 tracking-tight truncate">{j.title}</h4>
+                      <p className="text-[10px] font-bold text-slate-450 uppercase tracking-widest truncate">
+                        🏢 {j.company || 'Hiring Company'} &nbsp;•&nbsp; 📍 {j.location || 'Remote'} &nbsp;•&nbsp; 📅 {j.deadline || 'No Deadline'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copySocialText(j)}
+                      className="w-full sm:w-auto bg-emerald-50 hover:bg-emerald-100 text-[#10B981] font-black text-[10px] uppercase tracking-widest px-4.5 py-3 rounded-xl transition cursor-pointer border border-emerald-250/20 text-center shadow-sm shrink-0"
+                    >
+                      📢 Copy Social Text
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
 
         </div>
       </main>
