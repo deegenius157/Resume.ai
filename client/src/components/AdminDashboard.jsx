@@ -183,6 +183,37 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
 
       setSuccessMsg('🎉 Job posting successfully created and saved in Supabase database!');
       fetchJobs();
+
+      // IndexNow notification (runs silently in the background)
+      const notifyIndexNow = async () => {
+        const slugify = (text) => {
+          if (!text) return '';
+          return text
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '');
+        };
+        const linkSlug = slugify(title.trim());
+        const jobUrl = `https://genusjob.com/jobs/${uniqueManualId}${linkSlug ? '-' + linkSlug : ''}`;
+
+        try {
+          await fetch('https://api.indexnow.org/indexnow', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({
+              host: 'genusjob.com',
+              key: '8f8a92b23c2d4e7f8051ab6a7c8d9e0f',
+              keyLocation: 'https://genusjob.com/8f8a92b23c2d4e7f8051ab6a7c8d9e0f.txt',
+              urlList: [jobUrl]
+            })
+          });
+        } catch (err) {
+          console.error('IndexNow submission failed:', err);
+        }
+      };
+      notifyIndexNow();
       
       // Reset form fields
       setTitle('');

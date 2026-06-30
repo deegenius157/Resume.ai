@@ -258,6 +258,42 @@ async function fetchAndUpsertJobs() {
     }
     
     console.log('🎉 Successfully completed job sync process. Duplicate entries were skipped.');
+
+    // IndexNow dynamic urlList generation & trigger
+    if (uniqueMappedJobs.length > 0) {
+      const slugify = (text) => {
+        if (!text) return '';
+        return text
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '');
+      };
+
+      const urlList = uniqueMappedJobs.map(job => {
+        const cleanId = job.job_id || job.id || '';
+        const linkSlug = slugify(job.title);
+        return `https://genusjob.com/jobs/${cleanId}${linkSlug ? '-' + linkSlug : ''}`;
+      });
+
+      console.log(`📡 Sending ${urlList.length} URLs to IndexNow...`);
+      try {
+        const response = await fetch('https://api.indexnow.org/indexnow', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8'
+          },
+          body: JSON.stringify({
+            host: 'genusjob.com',
+            key: '8f8a92b23c2d4e7f8051ab6a7c8d9e0f',
+            keyLocation: 'https://genusjob.com/8f8a92b23c2d4e7f8051ab6a7c8d9e0f.txt',
+            urlList: urlList
+          })
+        });
+        console.log(`IndexNow response status: ${response.status}`);
+      } catch (err) {
+        console.error('❌ IndexNow background call failed:', err.message);
+      }
+    }
   } catch (error) {
     console.error('❌ Error executing job sync:', error.message);
     process.exit(1);
