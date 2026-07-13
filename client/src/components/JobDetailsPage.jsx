@@ -327,6 +327,17 @@ export default function JobDetailsPage() {
     return `$${monthlyMin.toLocaleString()} — $${monthlyMax.toLocaleString()} / month`;
   };
 
+  const getSalaryDisplay = (jobVal) => {
+    if (!jobVal) return null;
+    if (jobVal.salary && String(jobVal.salary).trim() !== '') {
+      return String(jobVal.salary).trim();
+    }
+    if (jobVal.salary_min) {
+      return formatMonthlySalary(jobVal.salary_min, jobVal.salary_max);
+    }
+    return null;
+  };
+
   useEffect(() => {
     const fetchJob = async () => {
       setIsLoading(true);
@@ -640,7 +651,9 @@ export default function JobDetailsPage() {
               <div className="flex flex-wrap gap-x-6 gap-y-3 pt-2 text-sm font-bold text-slate-650 uppercase tracking-widest">
                 <span>🏢 Company: <strong className="text-slate-800">{company}</strong></span>
                 <span>📍 Location: <strong className="text-emerald-600 font-extrabold">{location}</strong></span>
-                <span>💰 Salary: <strong className="text-[#10B981]">{salaryRange}</strong></span>
+                {getSalaryDisplay(job) && (
+                  <span>💰 Salary: <strong className="text-[#10B981]">{getSalaryDisplay(job)}</strong></span>
+                )}
               </div>
 
               {job.redirect_url && (
@@ -743,10 +756,12 @@ export default function JobDetailsPage() {
                   <span>Base Area:</span>
                   <span className="text-emerald-600 font-extrabold">{location}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Salary Limit:</span>
-                  <span className="text-[#10B981]">{salaryRange}</span>
-                </div>
+                {getSalaryDisplay(job) && (
+                  <div className="flex justify-between">
+                    <span>Salary Limit:</span>
+                    <span className="text-[#10B981]">{getSalaryDisplay(job)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Posted on:</span>
                   <span className="text-slate-700">

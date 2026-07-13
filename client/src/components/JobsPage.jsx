@@ -117,6 +117,17 @@ export default function JobsPage() {
     return `$${monthlyMin.toLocaleString()} — $${monthlyMax.toLocaleString()} / month`;
   };
 
+  const getSalaryDisplay = (jobVal) => {
+    if (!jobVal) return null;
+    if (jobVal.salary && String(jobVal.salary).trim() !== '') {
+      return String(jobVal.salary).trim();
+    }
+    if (jobVal.salary_min) {
+      return formatMonthlySalary(jobVal.salary_min, jobVal.salary_max);
+    }
+    return null;
+  };
+
   useEffect(() => {
     document.title = 'Remote & International Career Opportunities - Genusjob Resume AI';
     
@@ -370,9 +381,9 @@ export default function JobsPage() {
                         <span className="text-[9px] font-black bg-emerald-500/10 text-[#10B981] px-2.5 py-1 rounded-full uppercase tracking-widest border border-emerald-500/15">
                           {job.category?.label || 'General'}
                         </span>
-                        {job.salary_min && (
+                        {getSalaryDisplay(job) && (
                           <span className="text-[9px] font-black bg-slate-50 text-slate-500 px-2.5 py-1 rounded-full uppercase tracking-widest border border-slate-100">
-                            {formatMonthlySalary(job.salary_min, job.salary_max)}
+                            {getSalaryDisplay(job)}
                           </span>
                         )}
                       </div>

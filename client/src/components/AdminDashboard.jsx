@@ -153,6 +153,16 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
       // Generate a unique job_id for manual entries to satisfy the unique constraint
       const uniqueManualId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      const slugify = (text) => {
+        if (!text) return '';
+        return text
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '');
+      };
+      const randomSuffix = Math.random().toString(36).substring(2, 7);
+      const uniqueUrl = `https://genusjob.com/jobs/${uniqueManualId}-${slugify(title.trim())}-${randomSuffix}`;
+
       let finalSourceUrl = sourceUrl.trim() || null;
       if (finalSourceUrl) {
         if (!finalSourceUrl.startsWith('mailto:') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(finalSourceUrl)) {
@@ -174,7 +184,7 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
             source_url: finalSourceUrl,
             job_id: uniqueManualId,
             category: 'Private Job',
-            url: finalSourceUrl || `https://genusjob.com/jobs/${uniqueManualId}`,
+            url: uniqueUrl,
             created_at: new Date().toISOString()
           }
         ]);
@@ -186,15 +196,7 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
 
       // IndexNow notification (runs silently in the background)
       const notifyIndexNow = async () => {
-        const slugify = (text) => {
-          if (!text) return '';
-          return text
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)+/g, '');
-        };
-        const linkSlug = slugify(title.trim());
-        const jobUrl = `https://genusjob.com/jobs/${uniqueManualId}${linkSlug ? '-' + linkSlug : ''}`;
+        const jobUrl = uniqueUrl;
 
         try {
           await fetch('https://api.indexnow.org/indexnow', {
