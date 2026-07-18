@@ -45,9 +45,11 @@ async function fetchAndUpsertRssJobs() {
     console.log('⚠️ RemoteOK RSS feed is temporarily disabled/dead (HTTP 410). Skipping...');
     return;
 
+    /*
     const feed = await parser.parseURL(feedUrl);
     const rawItems = feed.items || [];
     console.log(`✅ Successfully fetched ${rawItems.length} raw jobs from RemoteOK RSS.`);
+    */
 
     if (rawItems.length === 0) {
       console.log('No jobs found in the RSS feed.');
