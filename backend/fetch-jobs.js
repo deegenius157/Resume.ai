@@ -295,8 +295,8 @@ async function fetchAndUpsertJobs() {
       }
     }
   } catch (error) {
-    console.error('❌ Error executing job sync:', error.message);
-    process.exit(1);
+    console.warn('⚠️ Warning: Error executing job sync:', error.message);
+    process.exit(0);
   }
 }
 

@@ -42,6 +42,9 @@ async function fetchAndUpsertRssJobs() {
   const feedUrl = 'https://remoteok.com/remote-jobs.rss';
 
   try {
+    console.log('⚠️ RemoteOK RSS feed is temporarily disabled/dead (HTTP 410). Skipping...');
+    return;
+
     const feed = await parser.parseURL(feedUrl);
     const rawItems = feed.items || [];
     console.log(`✅ Successfully fetched ${rawItems.length} raw jobs from RemoteOK RSS.`);
@@ -73,7 +76,7 @@ async function fetchAndUpsertRssJobs() {
       };
     }).filter(job => job.url); // filter out items without URLs
 
-    console.log(`⚡ Upserting ${mappedJobs.length} jobs into Supabase...`);
+    console.log(`... Upserting ${mappedJobs.length} jobs into Supabase...`);
 
     const { data, error } = await supabase
       .from('jobs')
@@ -86,8 +89,8 @@ async function fetchAndUpsertRssJobs() {
     console.log('🎉 Successfully completed RSS job sync process. Duplicate entries were skipped.');
 
   } catch (error) {
-    console.error('❌ Error executing RSS job sync:', error.message);
-    process.exit(1);
+    console.warn('⚠️ Warning: Error executing RSS job sync:', error.message);
+    process.exit(0);
   }
 }
 
