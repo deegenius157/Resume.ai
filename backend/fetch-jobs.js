@@ -23,7 +23,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false }
 });
 
-const parser = new Parser();
+const parser = new Parser({
+  customFields: {
+    item: [
+      ['company', 'company'],
+      ['company_name', 'company_name'],
+      ['dc:creator', 'creator'],
+      ['author', 'author'],
+      ['source', 'source'],
+      ['job_type', 'job_type'],
+      ['employment_type', 'employment_type'],
+      ['location', 'location']
+    ]
+  }
+});
 
 // Helper to clean up Mojibake encoding corruption
 function cleanCorruptedText(text) {
@@ -178,6 +191,47 @@ async function extractSourceUrlAndDeadline(wrapperUrl) {
   return { sourceUrl, deadline };
 }
 
+// Helper to extract company name from creator/author/company tags
+function extractCompanyName(item) {
+  if (!item) return null;
+  let company = item.company || item.company_name || item.creator || item.author || item.source;
+  if (!company) return null;
+  if (typeof company === 'object') {
+    company = company.name || company._ || company.content || '';
+  }
+  company = String(company).trim();
+  if (!company || company.toLowerCase() === 'hiring company' || company.toLowerCase() === 'unknown') {
+    return null;
+  }
+  return cleanCorruptedText(company);
+}
+
+// Helper to extract location name from item tags
+function extractLocationName(item) {
+  if (!item) return null;
+  let loc = item.location || item.job_location || item['dc:location'];
+  if (!loc) return null;
+  if (typeof loc === 'object') {
+    loc = loc.name || loc._ || loc.content || '';
+  }
+  loc = String(loc).trim();
+  if (!loc || loc.toLowerCase() === 'n/a') return null;
+  return cleanCorruptedText(loc);
+}
+
+// Helper to extract job_type from item tags
+function extractJobType(item) {
+  if (!item) return null;
+  let type = item.job_type || item.employment_type || item.type;
+  if (!type) return null;
+  if (typeof type === 'object') {
+    type = type.name || type._ || type.content || '';
+  }
+  type = String(type).trim();
+  if (!type || type.toLowerCase() === 'n/a') return null;
+  return cleanCorruptedText(type);
+}
+
 // Helper to detect if a job is AI or AI-enabled based on title and description
 function detectAiRole(title = '', description = '') {
   const text = `${title} ${description}`.toLowerCase();
@@ -245,14 +299,18 @@ async function fetchAndUpsertJobs() {
       const cleanTitle = cleanCorruptedText(item.title);
       const cleanDesc = cleanCorruptedText(description);
       const isAiRole = detectAiRole(cleanTitle, cleanDesc);
+      const companyName = extractCompanyName(item);
+      const locationName = extractLocationName(item);
+      const jobType = extractJobType(item);
 
       let category = isAiRole ? 'AI & Automation' : (item.categories?.join(', ') || 'Technology');
 
       mappedJobs.push({
         job_id,
         title: cleanTitle,
-        company: cleanCorruptedText(item.company || 'Hiring Company'),
-        location: cleanCorruptedText(item.location || 'Remote'),
+        company: companyName || null,
+        location: locationName || null,
+        job_type: jobType || null,
         description: cleanDesc,
         requirements: cleanCorruptedText(requirements),
         benefits: cleanCorruptedText(benefits),

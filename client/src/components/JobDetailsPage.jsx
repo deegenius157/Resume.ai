@@ -371,19 +371,21 @@ export default function JobDetailsPage() {
         if (error) throw error;
 
         if (dbJob) {
-          let loc = dbJob.location || 'Remote';
-          if (loc.toLowerCase().includes('remote') || loc.toLowerCase().includes('worldwide')) {
-            loc = 'Worldwide (Remote)';
-          }
+          const rawCompany = dbJob.company ? (typeof dbJob.company === 'object' ? dbJob.company.display_name || dbJob.company.name : dbJob.company) : null;
+          const cleanCompany = (rawCompany && String(rawCompany).trim() !== '' && String(rawCompany).trim().toLowerCase() !== 'hiring company') ? String(rawCompany).trim() : null;
+
+          const rawLoc = dbJob.location ? (typeof dbJob.location === 'object' ? dbJob.location.display_name || dbJob.location.name : dbJob.location) : null;
+          const cleanLoc = (rawLoc && String(rawLoc).trim() !== '' && String(rawLoc).trim().toLowerCase() !== 'n/a') ? String(rawLoc).trim() : null;
+
+          const rawType = dbJob.job_type || dbJob.employment_type || null;
+          const cleanJobType = (rawType && String(rawType).trim() !== '' && String(rawType).trim().toLowerCase() !== 'n/a') ? String(rawType).trim() : null;
+
           const normalizedJob = {
             ...dbJob,
             redirect_url: dbJob.source_url || dbJob.url,
-            location: {
-              display_name: loc
-            },
-            company: {
-              display_name: dbJob.company || 'Hiring Company'
-            },
+            location: cleanLoc ? { display_name: cleanLoc } : null,
+            company: cleanCompany ? { display_name: cleanCompany } : null,
+            job_type: cleanJobType,
             category: {
               label: dbJob.category || 'Technology'
             }
@@ -415,9 +417,13 @@ export default function JobDetailsPage() {
   useEffect(() => {
     if (job) {
       const jobTitle = job.title || 'Job Opportunity';
-      const companyName = job.company?.display_name || job.company || 'Hiring Company';
-      const location = job.location?.display_name || job.location || 'Remote';
-      document.title = `${jobTitle} at ${companyName} | GenusJob`;
+      const rawComp = (typeof job.company === 'object' ? job.company?.display_name || job.company?.name : job.company) || '';
+      const companyName = (rawComp && String(rawComp).trim() !== '' && String(rawComp).trim().toLowerCase() !== 'hiring company') ? String(rawComp).trim() : null;
+      
+      const rawLoc = (typeof job.location === 'object' ? job.location?.display_name || job.location?.name : job.location) || '';
+      const location = (rawLoc && String(rawLoc).trim() !== '' && String(rawLoc).trim().toLowerCase() !== 'n/a') ? String(rawLoc).trim() : null;
+
+      document.title = companyName ? `${jobTitle} at ${companyName} | GenusJob` : `${jobTitle} | GenusJob`;
 
       // Update Meta Tags dynamically
       const updateMetaTag = (property, content) => {
@@ -440,8 +446,8 @@ export default function JobDetailsPage() {
         el.setAttribute('content', content);
       };
 
-      const cleanTitle = `${jobTitle} | GenusJob`;
-      const cleanDesc = `Location: ${location} | Apply directly on GenusJob.`;
+      const cleanTitle = companyName ? `${jobTitle} at ${companyName} | GenusJob` : `${jobTitle} | GenusJob`;
+      const cleanDesc = location ? `Location: ${location} | Apply directly on GenusJob.` : `Apply directly on GenusJob.`;
 
       // Open Graph Metadata
       updateMetaTag('og:title', cleanTitle);
@@ -464,14 +470,17 @@ export default function JobDetailsPage() {
 
     const jobTitle = job.title?.replace(/<\/?[^>]+(>|$)/g, '') || '';
     const jobDesc = job.description?.replace(/<\/?[^>]+(>|$)/g, '') || '';
-    const company = job.company?.display_name || 'Hiring Company';
-    const location = job.location?.display_name || 'Remote';
+    const rawComp = (typeof job.company === 'object' ? job.company?.display_name || job.company?.name : job.company) || '';
+    const company = (rawComp && String(rawComp).trim() !== '' && String(rawComp).trim().toLowerCase() !== 'hiring company') ? String(rawComp).trim() : null;
+
+    const rawLoc = (typeof job.location === 'object' ? job.location?.display_name || job.location?.name : job.location) || '';
+    const location = (rawLoc && String(rawLoc).trim() !== '' && String(rawLoc).trim().toLowerCase() !== 'n/a') ? String(rawLoc).trim() : null;
 
     // 1. Client-side SEO Metadata update
-    document.title = `${jobTitle} at ${company} - genusjob.com`;
+    document.title = company ? `${jobTitle} at ${company} - genusjob.com` : `${jobTitle} - genusjob.com`;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute('content', `Apply for ${jobTitle} at ${company}. Learn more and tailor your resume for this position.`);
+      metaDesc.setAttribute('content', company ? `Apply for ${jobTitle} at ${company}. Learn more and tailor your resume for this position.` : `Apply for ${jobTitle}. Learn more and tailor your resume for this position.`);
     }
 
     // 2. Client-side JSON-LD Schema injection
@@ -481,18 +490,21 @@ export default function JobDetailsPage() {
       'title': jobTitle,
       'description': jobDesc,
       'datePosted': job.created || new Date().toISOString(),
-      'hiringOrganization': {
-        '@type': 'Organization',
-        'name': company
-      },
-      'jobLocation': {
-        '@type': 'Place',
-        'address': {
-          '@type': 'PostalAddress',
-          'addressLocality': location,
-          'addressCountry': 'US'
+      ...(company && {
+        'hiringOrganization': {
+          '@type': 'Organization',
+          'name': company
         }
-      },
+      }),
+      ...(location && {
+        'jobLocation': {
+          '@type': 'Place',
+          'address': {
+            '@type': 'PostalAddress',
+            'addressLocality': location
+          }
+        }
+      }),
       ...(job.salary_min && {
         'baseSalary': {
           '@type': 'MonetaryAmount',
@@ -543,8 +555,15 @@ export default function JobDetailsPage() {
 
   const jobTitle = job.title?.replace(/<\/?[^>]+(>|$)/g, '') || '';
   const jobDesc = job.description?.replace(/<\/?[^>]+(>|$)/g, '') || '';
-  const company = job.company?.display_name || 'Hiring Company';
-  const location = job.location?.display_name || 'Remote';
+  const rawComp = (typeof job.company === 'object' ? job.company?.display_name || job.company?.name : job.company) || '';
+  const company = (rawComp && String(rawComp).trim() !== '' && String(rawComp).trim().toLowerCase() !== 'hiring company') ? String(rawComp).trim() : null;
+
+  const rawLoc = (typeof job.location === 'object' ? job.location?.display_name || job.location?.name : job.location) || '';
+  const location = (rawLoc && String(rawLoc).trim() !== '' && String(rawLoc).trim().toLowerCase() !== 'n/a') ? String(rawLoc).trim() : null;
+
+  const rawType = job.job_type || job.employment_type || '';
+  const jobType = (rawType && String(rawType).trim() !== '' && String(rawType).trim().toLowerCase() !== 'n/a') ? String(rawType).trim() : null;
+
   const salaryRange = formatMonthlySalary(job.salary_min, job.salary_max);
 
   return (
@@ -635,26 +654,34 @@ export default function JobDetailsPage() {
           <div className="flex-1 space-y-12">
             <div className="bg-slate-50 border border-slate-200 p-8 md:p-12 rounded-[2.5rem] space-y-6">
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-[9px] font-black bg-emerald-500/10 text-[#10B981] px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-500/15">
                   {job.category?.label || 'General'}
                 </span>
-                <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-3 py-1 rounded-full uppercase tracking-widest border border-slate-200">
-                  Full Time
-                </span>
+                {jobType && (
+                  <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-3 py-1 rounded-full uppercase tracking-widest border border-slate-200">
+                    {jobType}
+                  </span>
+                )}
               </div>
 
               <h1 className="text-3xl md:text-4xl font-black text-slate-800 uppercase tracking-tight leading-tight">
                 {jobTitle}
               </h1>
 
-              <div className="flex flex-wrap gap-x-6 gap-y-3 pt-2 text-sm font-bold text-slate-650 uppercase tracking-widest">
-                <span>🏢 Company: <strong className="text-slate-800">{company}</strong></span>
-                <span>📍 Location: <strong className="text-emerald-600 font-extrabold">{location}</strong></span>
-                {getSalaryDisplay(job) && (
-                  <span>💰 Salary: <strong className="text-[#10B981]">{getSalaryDisplay(job)}</strong></span>
-                )}
-              </div>
+              {(company || location || getSalaryDisplay(job)) && (
+                <div className="flex flex-wrap gap-x-6 gap-y-3 pt-2 text-sm font-bold text-slate-650 uppercase tracking-widest">
+                  {company && (
+                    <span>🏢 Company: <strong className="text-slate-800">{company}</strong></span>
+                  )}
+                  {location && (
+                    <span>📍 Location: <strong className="text-emerald-600 font-extrabold">{location}</strong></span>
+                  )}
+                  {getSalaryDisplay(job) && (
+                    <span>💰 Salary: <strong className="text-[#10B981]">{getSalaryDisplay(job)}</strong></span>
+                  )}
+                </div>
+              )}
 
               {job.redirect_url && (
                 <div className="pt-2 text-left">
@@ -744,40 +771,46 @@ export default function JobDetailsPage() {
             </div>
 
             {/* Quick stats panel */}
-            <div className="p-8 bg-slate-50 border border-slate-200 rounded-[2.5rem] space-y-6">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Position Summary</h4>
-              
-              <div className="space-y-4 text-xs font-bold uppercase tracking-wider text-slate-400">
-                <div className="flex justify-between">
-                  <span>Job Type:</span>
-                  <span className="text-slate-700">Full-Time</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Base Area:</span>
-                  <span className="text-emerald-600 font-extrabold">{location}</span>
-                </div>
-                {getSalaryDisplay(job) && (
+            {(jobType || location || getSalaryDisplay(job) || job.created || job.created_at || job.deadline) && (
+              <div className="p-8 bg-slate-50 border border-slate-200 rounded-[2.5rem] space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Position Summary</h4>
+                
+                <div className="space-y-4 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  {jobType && (
+                    <div className="flex justify-between">
+                      <span>Job Type:</span>
+                      <span className="text-slate-700">{jobType}</span>
+                    </div>
+                  )}
+                  {location && (
+                    <div className="flex justify-between">
+                      <span>Base Area:</span>
+                      <span className="text-emerald-600 font-extrabold">{location}</span>
+                    </div>
+                  )}
+                  {getSalaryDisplay(job) && (
+                    <div className="flex justify-between">
+                      <span>Salary Limit:</span>
+                      <span className="text-[#10B981]">{getSalaryDisplay(job)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
-                    <span>Salary Limit:</span>
-                    <span className="text-[#10B981]">{getSalaryDisplay(job)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span>Posted on:</span>
-                  <span className="text-slate-700">
-                    {job.created_at ? new Date(job.created_at).toLocaleDateString() : (job.created ? new Date(job.created).toLocaleDateString() : 'Recent')}
-                  </span>
-                </div>
-                {job.deadline && (
-                  <div className="flex justify-between">
-                    <span>Deadline:</span>
-                    <span className="text-rose-600 font-extrabold">
-                      {new Date(job.deadline).toLocaleDateString()}
+                    <span>Posted on:</span>
+                    <span className="text-slate-700">
+                      {job.created ? new Date(job.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : (job.created_at ? new Date(job.created_at).toLocaleDateString() : 'Recently')}
                     </span>
                   </div>
-                )}
+                  {job.deadline && (
+                    <div className="flex justify-between">
+                      <span>Deadline:</span>
+                      <span className="text-rose-600 font-extrabold">
+                        {new Date(job.deadline).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
 

@@ -196,16 +196,22 @@ export default function JobsPage() {
         }
 
         const normalizedResults = supabaseJobs.map(job => {
-          let loc = job.location || 'Remote';
-          if (loc.toLowerCase().includes('remote') || loc.toLowerCase().includes('worldwide')) {
-            loc = 'Worldwide (Remote)';
-          }
-          const isAi = detectAiRole(job.title, job.description) || (job.category && job.category.toLowerCase().includes('ai'));
+          const rawCompany = typeof job.company === 'object' ? job.company?.display_name || job.company?.name : job.company;
+          const cleanCompany = (rawCompany && String(rawCompany).trim() !== '' && String(rawCompany).trim().toLowerCase() !== 'hiring company') ? String(rawCompany).trim() : null;
+
+          const rawLoc = typeof job.location === 'object' ? job.location?.display_name || job.location?.name : job.location;
+          const cleanLoc = (rawLoc && String(rawLoc).trim() !== '' && String(rawLoc).trim().toLowerCase() !== 'n/a') ? String(rawLoc).trim() : null;
+
+          const rawType = job.job_type || job.employment_type || null;
+          const cleanJobType = (rawType && String(rawType).trim() !== '' && String(rawType).trim().toLowerCase() !== 'n/a') ? String(rawType).trim() : null;
+
+          const isAi = detectAiRole(job.title, job.description) || (job.category && String(job.category).toLowerCase().includes('ai'));
           return {
             ...job,
             id: job.job_id || job.id,
-            company: { display_name: job.company || 'Hiring Company' },
-            location: { display_name: loc },
+            company: cleanCompany ? { display_name: cleanCompany } : null,
+            location: cleanLoc ? { display_name: cleanLoc } : null,
+            job_type: cleanJobType,
             category: { label: isAi ? 'AI & Automation' : (job.category || 'Technology') },
             salary_min: null,
             salary_max: null
@@ -516,10 +522,32 @@ export default function JobsPage() {
                         {jobTitle}
                       </h4>
                       
-                      <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        <span className="text-slate-500">🏢 {job.company?.display_name || 'Hiring Company'}</span>
-                        <span className="text-[#10B981] font-extrabold">📍 {job.location?.display_name || 'Remote'}</span>
-                      </div>
+                      {(() => {
+                        const compStr = (typeof job.company === 'object' ? job.company?.display_name || job.company?.name : job.company) || '';
+                        const cleanComp = (compStr && compStr.trim() !== '' && compStr.trim().toLowerCase() !== 'hiring company') ? compStr.trim() : null;
+                        
+                        const locStr = (typeof job.location === 'object' ? job.location?.display_name || job.location?.name : job.location) || '';
+                        const cleanLoc = (locStr && locStr.trim() !== '' && locStr.trim().toLowerCase() !== 'n/a') ? locStr.trim() : null;
+                        
+                        const typeStr = job.job_type || job.employment_type || '';
+                        const cleanType = (typeStr && String(typeStr).trim() !== '' && String(typeStr).trim().toLowerCase() !== 'n/a') ? String(typeStr).trim() : null;
+
+                        if (!cleanComp && !cleanLoc && !cleanType) return null;
+
+                        return (
+                          <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex-wrap">
+                            {cleanComp && (
+                              <span className="text-slate-500">🏢 {cleanComp}</span>
+                            )}
+                            {cleanLoc && (
+                              <span className="text-[#10B981] font-extrabold">📍 {cleanLoc}</span>
+                            )}
+                            {cleanType && (
+                              <span className="text-blue-600 font-extrabold">💼 {cleanType}</span>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       <p className="text-sm text-slate-650 font-medium leading-relaxed max-w-4xl line-clamp-2">
                         {jobDesc}

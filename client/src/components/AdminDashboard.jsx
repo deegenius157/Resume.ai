@@ -495,7 +495,14 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
                     <div className="space-y-1.5 flex-1 min-w-0">
                       <h4 className="text-sm font-black text-slate-800 tracking-tight truncate">{j.title}</h4>
                       <p className="text-[10px] font-bold text-slate-450 uppercase tracking-widest truncate">
-                        🏢 {j.company || 'Hiring Company'} &nbsp;•&nbsp; 📍 {j.location || 'Remote'} &nbsp;•&nbsp; 📅 {j.deadline || 'No Deadline'}
+                        {(() => {
+                          const parts = [];
+                          if (j.company && j.company.toLowerCase() !== 'hiring company') parts.push(`🏢 ${j.company}`);
+                          if (j.location) parts.push(`📍 ${j.location}`);
+                          if (j.job_type) parts.push(`💼 ${j.job_type}`);
+                          if (j.deadline) parts.push(`📅 ${j.deadline}`);
+                          return parts.length > 0 ? parts.join('  •  ') : 'NO METADATA';
+                        })()}
                       </p>
                     </div>
                     <button

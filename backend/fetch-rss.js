@@ -33,9 +33,57 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 const parser = new Parser({
   customFields: {
-    item: ['company', 'tags', 'location']
+    item: [
+      ['company', 'company'],
+      ['company_name', 'company_name'],
+      ['dc:creator', 'creator'],
+      ['author', 'author'],
+      ['source', 'source'],
+      ['job_type', 'job_type'],
+      ['employment_type', 'employment_type'],
+      ['location', 'location'],
+      ['tags', 'tags']
+    ]
   }
 });
+
+function extractCompanyName(item) {
+  if (!item) return null;
+  let company = item.company || item.company_name || item.creator || item.author || item.source;
+  if (!company) return null;
+  if (typeof company === 'object') {
+    company = company.name || company._ || company.content || '';
+  }
+  company = String(company).trim();
+  if (!company || company.toLowerCase() === 'hiring company' || company.toLowerCase() === 'unknown') {
+    return null;
+  }
+  return company;
+}
+
+function extractLocationName(item) {
+  if (!item) return null;
+  let loc = item.location || item.job_location || item['dc:location'];
+  if (!loc) return null;
+  if (typeof loc === 'object') {
+    loc = loc.name || loc._ || loc.content || '';
+  }
+  loc = String(loc).trim();
+  if (!loc || loc.toLowerCase() === 'n/a') return null;
+  return loc;
+}
+
+function extractJobType(item) {
+  if (!item) return null;
+  let type = item.job_type || item.employment_type || item.type;
+  if (!type) return null;
+  if (typeof type === 'object') {
+    type = type.name || type._ || type.content || '';
+  }
+  type = String(type).trim();
+  if (!type || type.toLowerCase() === 'n/a') return null;
+  return type;
+}
 
 async function fetchAndUpsertRssJobs() {
   console.log('🔄 Initiating RemoteOK RSS fetch process...');
@@ -56,23 +104,6 @@ async function fetchAndUpsertRssJobs() {
       return;
     }
 
-// Helper to detect if a job is AI or AI-enabled based on title and description
-function detectAiRole(title = '', description = '') {
-  const text = `${title} ${description}`.toLowerCase();
-  const keywords = [
-    'artificial intelligence', 'machine learning', 'llm', 'large language model',
-    'prompt engineer', 'prompt engineering', 'data annotation', 'ai ops', 'ai operations',
-    'generative ai', 'deep learning', 'nlp', 'natural language processing',
-    'neural network', 'chatgpt', 'openai', 'anthropic', 'langchain', 'computer vision',
-    'automation engineer', 'ai specialist', 'ai developer', 'ai researcher'
-  ];
-
-  if (/\b(ai|a\.i\.)\b/i.test(text)) return true;
-  if (/\b(prompt|automation)\b/i.test(text)) return true;
-
-  return keywords.some(kw => text.includes(kw));
-}
-
     // Map raw RSS items to our postgres database schema
     const mappedJobs = rawItems.map(item => {
       let category = 'Technology';
@@ -92,11 +123,12 @@ function detectAiRole(title = '', description = '') {
 
       return {
         title: rawTitle,
-        company: item.company ? item.company.trim() : 'Remote Company',
+        company: extractCompanyName(item),
+        location: extractLocationName(item),
+        job_type: extractJobType(item),
         url: item.link ? item.link.trim() : '',
         description: rawDesc,
         category: category,
-        location: item.location ? item.location.trim() : 'Remote',
         created_at: item.isoDate ? item.isoDate : (item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString())
       };
     }).filter(job => job.url); // filter out items without URLs
