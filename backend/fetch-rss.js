@@ -114,6 +114,32 @@ function sanitizeApplicationUrl(rawUrl) {
   }
 }
 
+const EXCLUDED_KEYWORDS = [
+  'driver', 'teacher', 'maintenance', 'cleaner', 'janitor', 'cook', 'school',
+  'academy', 'security guard', 'tutor', 'housekeeper', 'nanny', 'chef',
+  'receptionist', 'driver/', 'bus driver', 'truck driver', 'classroom'
+];
+
+function isExcludedRole(title = '', description = '') {
+  const text = `${title} ${description}`.toLowerCase();
+  return EXCLUDED_KEYWORDS.some(kw => {
+    const regex = new RegExp(`\\b${kw.toLowerCase()}\\b`, 'i');
+    return regex.test(text) || text.includes(kw.toLowerCase());
+  });
+}
+
+function detectTechCategory(title = '', description = '') {
+  const text = `${title} ${description}`.toLowerCase();
+  if (/\b(ai|a\.i\.|llm|chatgpt|machine learning)\b/i.test(text)) return 'AI & Automation';
+  if (/\b(ui\/ux|product design|designer|ux|ui)\b/i.test(text)) return 'UI/UX Design';
+  if (/\b(python|full stack|frontend|backend|devops|react|node|javascript|engineer|developer|software)\b/i.test(text)) return 'Software Engineering';
+  if (/\b(data analyst|data scientist|analytics|sql|bi)\b/i.test(text)) return 'Data & Analytics';
+  if (/\b(growth|operations|ops|marketing|seo)\b/i.test(text)) return 'Growth & Operations';
+  if (/\b(customer experience|cx|support|success)\b/i.test(text)) return 'Customer Experience';
+
+  return 'Technology';
+}
+
 async function fetchAndUpsertRssJobs() {
   console.log('🔄 Initiating RemoteOK RSS fetch process...');
   const feedUrl = 'https://remoteok.com/remote-jobs.rss';
@@ -134,33 +160,26 @@ async function fetchAndUpsertRssJobs() {
     }
 
     // Map raw RSS items to our postgres database schema
-    const mappedJobs = rawItems.map(item => {
-      let category = 'Technology';
-      if (item.tags) {
-        const firstTag = item.tags.split(',')[0].trim();
-        if (firstTag) {
-          category = firstTag.charAt(0).toUpperCase() + firstTag.slice(1);
-        }
-      }
+    const mappedJobs = rawItems
+      .filter(item => !isExcludedRole(item.title || '', item.content || item.contentSnippet || ''))
+      .map(item => {
+        let category = detectTechCategory(item.title || '', item.content || item.contentSnippet || '');
 
-      const rawTitle = item.title ? item.title.trim() : 'Remote Position';
-      const rawDesc = item.content ? item.content.trim() : (item.contentSnippet ? item.contentSnippet.trim() : '');
-      
-      if (detectAiRole(rawTitle, rawDesc)) {
-        category = 'AI & Automation';
-      }
+        const rawTitle = item.title ? item.title.trim() : 'Remote Position';
+        const rawDesc = item.content ? item.content.trim() : (item.contentSnippet ? item.contentSnippet.trim() : '');
 
-      return {
-        title: rawTitle,
-        company: extractCompanyName(item),
-        location: extractLocationName(item),
-        job_type: extractJobType(item),
-        url: sanitizeApplicationUrl(item.link || item.guid || ''),
-        description: rawDesc,
-        category: category,
-        created_at: item.isoDate ? item.isoDate : (item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString())
-      };
-    }).filter(job => job.url); // filter out items without URLs
+        return {
+          title: rawTitle,
+          company: extractCompanyName(item),
+          location: extractLocationName(item),
+          job_type: extractJobType(item),
+          url: sanitizeApplicationUrl(item.link || item.guid || ''),
+          description: rawDesc,
+          category: category,
+          created_at: item.isoDate ? item.isoDate : (item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString())
+        };
+      })
+      .filter(job => job.url); // filter out items without URLs // filter out items without URLs
 
     console.log(`... Upserting ${mappedJobs.length} jobs into Supabase...`);
 

@@ -126,6 +126,9 @@ export default function AboutPage() {
             <Link to="/about" className="text-xs font-black uppercase tracking-widest text-[#10B981] transition-colors">
               About
             </Link>
+            <Link to="/post-job" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-[#10B981] transition-colors">
+              Post a Job
+            </Link>
             <Link to="/" className="bg-[#10B981] hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest px-4 py-2 rounded-full transition shadow-lg shadow-emerald-500/10">
               Build Resume
             </Link>
@@ -481,12 +484,12 @@ export default function AboutPage() {
           </div>
 
           <div className="shrink-0 w-full md:w-auto relative z-10">
-            <a
-              href="mailto:employers@genusjob.com?subject=Partner%20or%20Post%20a%20Job%20on%20GenusJob"
+            <Link
+              to="/post-job"
               className="w-full md:w-auto inline-block bg-[#10B981] hover:bg-emerald-500 text-white font-black text-sm px-8 py-4 rounded-xl text-center transition-all shadow-lg shadow-emerald-500/20 uppercase tracking-widest cursor-pointer border-0"
             >
               Partner / Post a Job &rarr;
-            </a>
+            </Link>
           </div>
         </section>
 

@@ -11,6 +11,7 @@ import JobDetailsPage from './components/JobDetailsPage';
 import BlogPage from './components/BlogPage';
 import BlogDetailsPage from './components/BlogDetailsPage';
 import AboutPage from './components/AboutPage';
+import PostJobPage from './components/PostJobPage';
 import AdminDashboard from './components/AdminDashboard';
 
 
@@ -116,6 +117,8 @@ function App() {
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogDetailsPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/post-job" element={<PostJobPage />} />
+          <Route path="/partner" element={<PostJobPage />} />
           
           {/* Admin Dashboard */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />

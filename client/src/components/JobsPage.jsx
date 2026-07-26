@@ -191,11 +191,23 @@ export default function JobsPage() {
 
         if (error) throw error;
 
-        if (!supabaseJobs || supabaseJobs.length === 0) {
-          throw new Error('No jobs returned from Supabase');
-        }
+const EXCLUDED_KEYWORDS = [
+  'driver', 'teacher', 'maintenance', 'cleaner', 'janitor', 'cook', 'school',
+  'academy', 'security guard', 'tutor', 'housekeeper', 'nanny', 'chef',
+  'receptionist', 'driver/', 'bus driver', 'truck driver', 'classroom'
+];
 
-        const normalizedResults = supabaseJobs.map(job => {
+function isExcludedRole(title = '', description = '') {
+  const text = `${title} ${description}`.toLowerCase();
+  return EXCLUDED_KEYWORDS.some(kw => {
+    const regex = new RegExp(`\\b${kw.toLowerCase()}\\b`, 'i');
+    return regex.test(text) || text.includes(kw.toLowerCase());
+  });
+}
+
+        const filteredJobs = (supabaseJobs || []).filter(j => !isExcludedRole(j.title, j.description));
+
+        const normalizedResults = filteredJobs.map(job => {
           const rawCompany = typeof job.company === 'object' ? job.company?.display_name || job.company?.name : job.company;
           const cleanCompany = (rawCompany && String(rawCompany).trim() !== '' && String(rawCompany).trim().toLowerCase() !== 'hiring company') ? String(rawCompany).trim() : null;
 

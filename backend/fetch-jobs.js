@@ -262,6 +262,33 @@ function extractJobType(item) {
   return cleanCorruptedText(type);
 }
 
+const EXCLUDED_KEYWORDS = [
+  'driver', 'teacher', 'maintenance', 'cleaner', 'janitor', 'cook', 'school',
+  'academy', 'security guard', 'tutor', 'housekeeper', 'nanny', 'chef',
+  'receptionist', 'driver/', 'bus driver', 'truck driver', 'classroom'
+];
+
+function isExcludedRole(title = '', description = '') {
+  const text = `${title} ${description}`.toLowerCase();
+  return EXCLUDED_KEYWORDS.some(kw => {
+    const regex = new RegExp(`\\b${kw.toLowerCase()}\\b`, 'i');
+    return regex.test(text) || text.includes(kw.toLowerCase());
+  });
+}
+
+function detectTechCategory(title = '', description = '') {
+  const text = `${title} ${description}`.toLowerCase();
+  if (detectAiRole(title, description)) return 'AI & Automation';
+
+  if (/\b(ui\/ux|product design|designer|ux|ui)\b/i.test(text)) return 'UI/UX Design';
+  if (/\b(python|full stack|frontend|backend|devops|react|node|javascript|engineer|developer|software)\b/i.test(text)) return 'Software Engineering';
+  if (/\b(data analyst|data scientist|analytics|sql|bi)\b/i.test(text)) return 'Data & Analytics';
+  if (/\b(growth|operations|ops|marketing|seo)\b/i.test(text)) return 'Growth & Operations';
+  if (/\b(customer experience|cx|support|success)\b/i.test(text)) return 'Customer Experience';
+
+  return 'Technology';
+}
+
 // Helper to detect if a job is AI or AI-enabled based on title and description
 function detectAiRole(title = '', description = '') {
   const text = `${title} ${description}`.toLowerCase();
@@ -317,6 +344,15 @@ async function fetchAndUpsertJobs() {
       
       const job_id = crypto.createHash('md5').update(item.link).digest('hex');
       const { description, requirements, benefits } = parseDescription(item.description || item.content);
+      
+      const cleanTitle = cleanCorruptedText(item.title);
+      const cleanDesc = cleanCorruptedText(description);
+
+      if (isExcludedRole(cleanTitle, cleanDesc)) {
+        console.log(`⚠️ Discarded non-relevant/excluded job: "${cleanTitle}"`);
+        continue;
+      }
+
       let { sourceUrl, deadline } = await extractSourceUrlAndDeadline(item.link);
       
       if (sourceUrl) {
@@ -325,15 +361,13 @@ async function fetchAndUpsertJobs() {
           sourceUrl = `mailto:${sourceUrl}`;
         }
       }
-      
-      const cleanTitle = cleanCorruptedText(item.title);
-      const cleanDesc = cleanCorruptedText(description);
+
       const isAiRole = detectAiRole(cleanTitle, cleanDesc);
       const companyName = extractCompanyName(item);
       const locationName = extractLocationName(item);
       const jobType = extractJobType(item);
 
-      let category = isAiRole ? 'AI & Automation' : (item.categories?.join(', ') || 'Technology');
+      let category = detectTechCategory(cleanTitle, cleanDesc);
 
       mappedJobs.push({
         job_id,
