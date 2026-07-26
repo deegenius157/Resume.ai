@@ -56,9 +56,25 @@ async function fetchAndUpsertRssJobs() {
       return;
     }
 
+// Helper to detect if a job is AI or AI-enabled based on title and description
+function detectAiRole(title = '', description = '') {
+  const text = `${title} ${description}`.toLowerCase();
+  const keywords = [
+    'artificial intelligence', 'machine learning', 'llm', 'large language model',
+    'prompt engineer', 'prompt engineering', 'data annotation', 'ai ops', 'ai operations',
+    'generative ai', 'deep learning', 'nlp', 'natural language processing',
+    'neural network', 'chatgpt', 'openai', 'anthropic', 'langchain', 'computer vision',
+    'automation engineer', 'ai specialist', 'ai developer', 'ai researcher'
+  ];
+
+  if (/\b(ai|a\.i\.)\b/i.test(text)) return true;
+  if (/\b(prompt|automation)\b/i.test(text)) return true;
+
+  return keywords.some(kw => text.includes(kw));
+}
+
     // Map raw RSS items to our postgres database schema
     const mappedJobs = rawItems.map(item => {
-      // Normalize category (capitalize first tag if available)
       let category = 'Technology';
       if (item.tags) {
         const firstTag = item.tags.split(',')[0].trim();
@@ -67,11 +83,18 @@ async function fetchAndUpsertRssJobs() {
         }
       }
 
+      const rawTitle = item.title ? item.title.trim() : 'Remote Position';
+      const rawDesc = item.content ? item.content.trim() : (item.contentSnippet ? item.contentSnippet.trim() : '');
+      
+      if (detectAiRole(rawTitle, rawDesc)) {
+        category = 'AI & Automation';
+      }
+
       return {
-        title: item.title ? item.title.trim() : 'Remote Position',
+        title: rawTitle,
         company: item.company ? item.company.trim() : 'Remote Company',
         url: item.link ? item.link.trim() : '',
-        description: item.content ? item.content.trim() : (item.contentSnippet ? item.contentSnippet.trim() : ''),
+        description: rawDesc,
         category: category,
         location: item.location ? item.location.trim() : 'Remote',
         created_at: item.isoDate ? item.isoDate : (item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString())

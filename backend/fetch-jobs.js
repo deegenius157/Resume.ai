@@ -178,6 +178,27 @@ async function extractSourceUrlAndDeadline(wrapperUrl) {
   return { sourceUrl, deadline };
 }
 
+// Helper to detect if a job is AI or AI-enabled based on title and description
+function detectAiRole(title = '', description = '') {
+  const text = `${title} ${description}`.toLowerCase();
+  const keywords = [
+    'artificial intelligence', 'machine learning', 'llm', 'large language model',
+    'prompt engineer', 'prompt engineering', 'data annotation', 'ai ops', 'ai operations',
+    'generative ai', 'deep learning', 'nlp', 'natural language processing',
+    'neural network', 'chatgpt', 'openai', 'anthropic', 'langchain', 'computer vision',
+    'automation engineer', 'ai specialist', 'ai developer', 'ai researcher'
+  ];
+
+  if (/\b(ai|a\.i\.)\b/i.test(text)) {
+    return true;
+  }
+  if (/\b(prompt|automation)\b/i.test(text)) {
+    return true;
+  }
+
+  return keywords.some(kw => text.includes(kw));
+}
+
 async function fetchAndUpsertJobs() {
   console.log('🔄 Initiating MyJobMag detailed RSS fetch process for ICT & Technology roles...');
   const feedUrl = 'https://www.myjobmag.com/jobsxml_by_categories.xml?cat=ict-computer';
@@ -221,17 +242,23 @@ async function fetchAndUpsertJobs() {
         }
       }
       
+      const cleanTitle = cleanCorruptedText(item.title);
+      const cleanDesc = cleanCorruptedText(description);
+      const isAiRole = detectAiRole(cleanTitle, cleanDesc);
+
+      let category = isAiRole ? 'AI & Automation' : (item.categories?.join(', ') || 'Technology');
+
       mappedJobs.push({
         job_id,
-        title: cleanCorruptedText(item.title),
+        title: cleanTitle,
         company: cleanCorruptedText(item.company || 'Hiring Company'),
         location: cleanCorruptedText(item.location || 'Remote'),
-        description: cleanCorruptedText(description),
+        description: cleanDesc,
         requirements: cleanCorruptedText(requirements),
         benefits: cleanCorruptedText(benefits),
         deadline,
         source_url: sourceUrl,
-        category: item.categories?.join(', ') || 'Technology',
+        category: category,
         url: item.link, // Keep original url just in case
         created_at: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString()
       });
@@ -246,8 +273,17 @@ async function fetchAndUpsertJobs() {
       uniqueJobsMap.set(job.job_id, job);
     }
     const uniqueMappedJobs = Array.from(uniqueJobsMap.values());
-    console.log(`✨ Deduplicated: ${uniqueMappedJobs.length} unique jobs ready to upsert.`);
     
+    // Sort so AI & Automation positions are prioritized at the top
+    uniqueMappedJobs.sort((a, b) => {
+      const aIsAi = a.category === 'AI & Automation' ? 1 : 0;
+      const bIsAi = b.category === 'AI & Automation' ? 1 : 0;
+      return bIsAi - aIsAi;
+    });
+
+    const aiCount = uniqueMappedJobs.filter(j => j.category === 'AI & Automation').length;
+    console.log(`🤖 Auto-categorized ${aiCount} AI & Automation positions out of ${uniqueMappedJobs.length} total.`);
+
     console.log('⚡ Upserting jobs into Supabase...');
     const { data, error } = await supabase
       .from('jobs')

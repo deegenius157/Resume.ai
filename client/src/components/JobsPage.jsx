@@ -83,6 +83,37 @@ function slugify(text) {
     .replace(/(^-|-$)+/g, '');
 }
 
+function detectAiRole(title = '', description = '') {
+  const text = `${title || ''} ${description || ''}`.toLowerCase();
+  const keywords = [
+    'artificial intelligence', 'machine learning', 'llm', 'large language model',
+    'prompt engineer', 'prompt engineering', 'data annotation', 'ai ops', 'ai operations',
+    'generative ai', 'deep learning', 'nlp', 'natural language processing',
+    'neural network', 'chatgpt', 'openai', 'anthropic', 'langchain', 'computer vision',
+    'automation engineer', 'ai specialist', 'ai developer', 'ai researcher'
+  ];
+
+  if (/\b(ai|a\.i\.)\b/i.test(text)) return true;
+  if (/\b(prompt|automation)\b/i.test(text)) return true;
+
+  return keywords.some(kw => text.includes(kw));
+}
+
+const MOCK_JOBS_LIST = [
+  {
+    id: 'mock_job_ai_1',
+    title: 'Senior LLM & AI Operations Engineer',
+    company: { display_name: 'Anthropic Ecosystems' },
+    location: { display_name: 'Worldwide (Remote)' },
+    description: 'Join our AI infrastructure team to deploy scalable LLM agents, automate data annotation loops, and fine-tune open-weights models for enterprise deployment. Fully remote position.',
+    salary_min: 160000,
+    salary_max: 210000,
+    created: '2026-06-25T10:00:00Z',
+    category: { label: 'AI & Automation' }
+  },
+  ...MOCK_JOBS
+];
+
 export default function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
@@ -91,6 +122,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMock, setIsMock] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   const [localQuery, setLocalQuery] = useState(query);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -129,12 +161,12 @@ export default function JobsPage() {
   };
 
   useEffect(() => {
-    document.title = 'Remote & International Career Opportunities - Genusjob Resume AI';
+    document.title = 'Remote AI & Tech Jobs - Genusjob Resume AI';
     
     // Set meta description
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute('content', 'Find global remote tech, design, and marketing positions open to West African talents. Tailor your resume in one click.');
+      metaDesc.setAttribute('content', 'Find global remote AI, LLM, automation, tech, design, and marketing positions open to applicants worldwide.');
     }
   }, []);
 
@@ -168,26 +200,39 @@ export default function JobsPage() {
           if (loc.toLowerCase().includes('remote') || loc.toLowerCase().includes('worldwide')) {
             loc = 'Worldwide (Remote)';
           }
+          const isAi = detectAiRole(job.title, job.description) || (job.category && job.category.toLowerCase().includes('ai'));
           return {
             ...job,
             id: job.job_id || job.id,
             company: { display_name: job.company || 'Hiring Company' },
             location: { display_name: loc },
-            category: { label: job.category || 'Technology' },
+            category: { label: isAi ? 'AI & Automation' : (job.category || 'Technology') },
             salary_min: null,
             salary_max: null
           };
+        });
+
+        // Prioritize AI & Automation positions to the top of the feed
+        normalizedResults.sort((a, b) => {
+          const aIsAi = (a.category?.label === 'AI & Automation' || detectAiRole(a.title, a.description)) ? 1 : 0;
+          const bIsAi = (b.category?.label === 'AI & Automation' || detectAiRole(b.title, b.description)) ? 1 : 0;
+          return bIsAi - aIsAi;
         });
 
         setJobs(normalizedResults);
         setIsMock(false);
       } catch (err) {
         console.warn('Supabase jobs fetch failed, loading mock jobs fallback:', err);
-        const filteredMock = MOCK_JOBS.filter(job => {
+        const filteredMock = MOCK_JOBS_LIST.filter(job => {
           const matchQuery = !query || 
             job.title.toLowerCase().includes(query.toLowerCase()) || 
             job.description.toLowerCase().includes(query.toLowerCase());
           return matchQuery;
+        });
+        filteredMock.sort((a, b) => {
+          const aIsAi = (a.category?.label === 'AI & Automation' || detectAiRole(a.title, a.description)) ? 1 : 0;
+          const bIsAi = (b.category?.label === 'AI & Automation' || detectAiRole(b.title, b.description)) ? 1 : 0;
+          return bIsAi - aIsAi;
         });
         setJobs(filteredMock);
         setIsMock(true);
@@ -352,13 +397,45 @@ export default function JobsPage() {
             </div>
           </div>
 
+          {/* CATEGORY FILTER TABS */}
+          <div className="flex items-center gap-2.5 overflow-x-auto pb-3 mb-6 scrollbar-none">
+            {[
+              { id: 'All', label: 'All Jobs', icon: '🌐' },
+              { id: 'AI & Automation', label: 'AI & Automation', icon: '⚡', featured: true },
+              { id: 'Technology', label: 'Tech & Engineering', icon: '💻' },
+              { id: 'Design', label: 'Design & Product', icon: '🎨' },
+              { id: 'Growth & Operations', label: 'Growth & Operations', icon: '📈' }
+            ].map((cat) => {
+              const isActive = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  type="button"
+                  className={`px-4 py-2.5 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer border ${
+                    isActive
+                      ? cat.featured
+                        ? 'bg-[#10B981] text-white border-[#10B981] shadow-lg shadow-emerald-500/20'
+                        : 'bg-slate-900 text-white border-slate-900 shadow-md'
+                      : cat.featured
+                      ? 'bg-emerald-500/10 text-[#10B981] border-emerald-500/30 hover:bg-emerald-500/20'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
           <div className="flex justify-between items-center border-b border-slate-100 pb-6 mb-8">
             <div>
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-700">
                 Latest Listings {isMock && '(Preview Mode)'}
               </h3>
               <p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">
-                {query ? `Showing ${jobs.length} jobs available matches` : 'RECOMMENDED REMOTE TECH OPPORTUNITIES'}
+                {query ? `Showing ${jobs.length} jobs available matches` : 'RECOMMENDED REMOTE TECH & AI OPPORTUNITIES'}
               </p>
             </div>
           </div>
@@ -368,29 +445,66 @@ export default function JobsPage() {
               <div className="inline-block w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
               <p className="text-xs font-black uppercase tracking-widest text-slate-400 animate-pulse">Loading Job Listings...</p>
             </div>
-          ) : jobs.length === 0 ? (
-            <div className="p-16 border border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center text-center bg-slate-50/50">
-              <span className="text-4xl mb-4">🔍</span>
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">No job matches found.</p>
-              <p className="text-slate-500 text-xs mt-2 font-medium">Try broadening your search query.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6">
-              {jobs.map((job) => {
-                const jobTitle = job.title?.replace(/<\/?[^>]+(>|$)/g, '') || '';
-                const jobDesc = job.description?.replace(/<\/?[^>]+(>|$)/g, '') || '';
-                const cleanId = job.id || `mock_${Math.random().toString(36).substr(2, 9)}`;
+          ) : (() => {
+            const displayedJobs = jobs.filter((job) => {
+              if (selectedCategory === 'All') return true;
+              const catLabel = (job.category?.label || job.category || '').toLowerCase();
+              const jobTitle = (job.title || '').toLowerCase();
+              const jobDesc = (job.description || '').toLowerCase();
+              
+              if (selectedCategory === 'AI & Automation') {
+                return catLabel.includes('ai') || catLabel.includes('automation') || detectAiRole(jobTitle, jobDesc);
+              }
+              if (selectedCategory === 'Technology') {
+                return catLabel.includes('tech') || catLabel.includes('it') || catLabel.includes('software');
+              }
+              if (selectedCategory === 'Design') {
+                return catLabel.includes('design') || catLabel.includes('ui') || catLabel.includes('ux');
+              }
+              if (selectedCategory === 'Growth & Operations') {
+                return catLabel.includes('marketing') || catLabel.includes('growth') || catLabel.includes('operation');
+              }
+              return true;
+            });
 
-                return (
-                  <div 
-                    key={cleanId} 
-                    className="p-8 bg-white border border-slate-100 hover:border-slate-200 rounded-[2rem] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm hover:shadow-md transition-all group"
-                  >
-                    <div className="space-y-3 flex-1 text-left">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-[9px] font-black bg-emerald-500/10 text-[#10B981] px-2.5 py-1 rounded-full uppercase tracking-widest border border-emerald-500/15">
-                          {job.category?.label || 'General'}
-                        </span>
+            if (displayedJobs.length === 0) {
+              return (
+                <div className="p-16 border border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center text-center bg-slate-50/50">
+                  <span className="text-4xl mb-4">🤖</span>
+                  <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">No jobs match this filter.</p>
+                  <p className="text-slate-500 text-xs mt-2 font-medium">Try selecting another category tab or broadening your query.</p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 gap-6">
+                {displayedJobs.map((job) => {
+                  const jobTitle = job.title?.replace(/<\/?[^>]+(>|$)/g, '') || '';
+                  const jobDesc = job.description?.replace(/<\/?[^>]+(>|$)/g, '') || '';
+                  const cleanId = job.id || `mock_${Math.random().toString(36).substr(2, 9)}`;
+                  const isAiRole = (job.category?.label === 'AI & Automation') || detectAiRole(jobTitle, jobDesc);
+
+                  return (
+                    <div 
+                      key={cleanId} 
+                      className={`p-8 rounded-[2rem] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm hover:shadow-md transition-all group border ${
+                        isAiRole 
+                          ? 'bg-gradient-to-r from-emerald-500/[0.03] via-white to-white border-emerald-500/30 hover:border-emerald-500/60' 
+                          : 'bg-white border-slate-100 hover:border-slate-200'
+                      }`}
+                    >
+                      <div className="space-y-3 flex-1 text-left">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          {isAiRole ? (
+                            <span className="text-[9px] font-black bg-[#10B981] text-white px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1 shadow-sm border border-emerald-400">
+                              ⚡ AI &amp; AUTOMATION
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-black bg-emerald-500/10 text-[#10B981] px-2.5 py-1 rounded-full uppercase tracking-widest border border-emerald-500/15">
+                              {job.category?.label || 'General'}
+                            </span>
+                          )}
                         {getSalaryDisplay(job) && (
                           <span className="text-[9px] font-black bg-slate-50 text-slate-500 px-2.5 py-1 rounded-full uppercase tracking-widest border border-slate-100">
                             {getSalaryDisplay(job)}
@@ -424,7 +538,8 @@ export default function JobsPage() {
                 );
               })}
             </div>
-          )}
+          );
+        })()}
         </div>
 
         {/* CONTEXTUAL GENERAL CTA BANNER */}
