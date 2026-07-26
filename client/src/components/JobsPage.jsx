@@ -228,6 +228,9 @@ export default function JobsPage() {
             <Link to="/blog" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors">
               Blog
             </Link>
+            <Link to="/about" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors">
+              About
+            </Link>
             <Link to="/" className="bg-[#10B981] hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest px-4 py-2 rounded-full transition shadow-lg shadow-emerald-500/10">
               Build Resume
             </Link>
@@ -267,6 +270,13 @@ export default function JobsPage() {
               className="text-xs font-black uppercase tracking-widest text-slate-650 hover:text-slate-900 py-1 transition-colors"
             >
               Blog
+            </Link>
+            <Link
+              to="/about"
+              onClick={() => setIsMenuOpen(false)}
+              className="text-xs font-black uppercase tracking-widest text-slate-650 hover:text-slate-900 py-1 transition-colors"
+            >
+              About
             </Link>
             <Link
               to="/"
