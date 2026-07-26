@@ -85,6 +85,35 @@ function extractJobType(item) {
   return type;
 }
 
+function sanitizeApplicationUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  let url = rawUrl.trim();
+  url = url.replace(/[\>\"\'\`\)]+$/, '');
+
+  if (!url.startsWith('mailto:') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url)) {
+    return `mailto:${url}`;
+  }
+
+  if (url.startsWith('mailto:')) {
+    return url;
+  }
+
+  if (!/^https?:\/\//i.test(url)) {
+    if (url.startsWith('//')) {
+      url = `https:${url}`;
+    } else {
+      url = `https://${url}`;
+    }
+  }
+
+  try {
+    const parsed = new URL(url);
+    return parsed.href;
+  } catch (e) {
+    return url;
+  }
+}
+
 async function fetchAndUpsertRssJobs() {
   console.log('🔄 Initiating RemoteOK RSS fetch process...');
   const feedUrl = 'https://remoteok.com/remote-jobs.rss';
@@ -126,7 +155,7 @@ async function fetchAndUpsertRssJobs() {
         company: extractCompanyName(item),
         location: extractLocationName(item),
         job_type: extractJobType(item),
-        url: item.link ? item.link.trim() : '',
+        url: sanitizeApplicationUrl(item.link || item.guid || ''),
         description: rawDesc,
         category: category,
         created_at: item.isoDate ? item.isoDate : (item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString())

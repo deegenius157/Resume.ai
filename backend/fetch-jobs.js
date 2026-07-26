@@ -191,6 +191,36 @@ async function extractSourceUrlAndDeadline(wrapperUrl) {
   return { sourceUrl, deadline };
 }
 
+// Helper to sanitize and normalize application URLs (web vs mailto)
+function sanitizeApplicationUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  let url = rawUrl.trim();
+  url = url.replace(/[\>\"\'\`\)]+$/, '');
+
+  if (!url.startsWith('mailto:') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url)) {
+    return `mailto:${url}`;
+  }
+
+  if (url.startsWith('mailto:')) {
+    return url;
+  }
+
+  if (!/^https?:\/\//i.test(url)) {
+    if (url.startsWith('//')) {
+      url = `https:${url}`;
+    } else {
+      url = `https://${url}`;
+    }
+  }
+
+  try {
+    const parsed = new URL(url);
+    return parsed.href;
+  } catch (e) {
+    return url;
+  }
+}
+
 // Helper to extract company name from creator/author/company tags
 function extractCompanyName(item) {
   if (!item) return null;
@@ -315,9 +345,9 @@ async function fetchAndUpsertJobs() {
         requirements: cleanCorruptedText(requirements),
         benefits: cleanCorruptedText(benefits),
         deadline,
-        source_url: sourceUrl,
+        source_url: sanitizeApplicationUrl(sourceUrl || item.link),
         category: category,
-        url: item.link, // Keep original url just in case
+        url: sanitizeApplicationUrl(item.link || sourceUrl),
         created_at: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString()
       });
       

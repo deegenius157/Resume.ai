@@ -187,6 +187,35 @@ function formatParsedText(text) {
   return <div className="space-y-1">{elements}</div>;
 }
 
+function sanitizeApplicationUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  let url = rawUrl.trim();
+  url = url.replace(/[\>\"\'\`\)]+$/, '');
+
+  if (!url.startsWith('mailto:') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url)) {
+    return `mailto:${url}`;
+  }
+
+  if (url.startsWith('mailto:')) {
+    return url;
+  }
+
+  if (!/^https?:\/\//i.test(url)) {
+    if (url.startsWith('//')) {
+      url = `https:${url}`;
+    } else {
+      url = `https://${url}`;
+    }
+  }
+
+  try {
+    const parsed = new URL(url);
+    return parsed.href;
+  } catch (e) {
+    return url;
+  }
+}
+
 export default function JobDetailsPage() {
   const { idSlug } = useParams();
   const id = idSlug ? idSlug.split('-')[0] : '';
@@ -294,13 +323,14 @@ export default function JobDetailsPage() {
 
   const handleApplyDirectly = () => {
     logMetric('proceed_to_external_apply', { job_id: job.job_id || job.id, title: jobTitle });
-    if (job.redirect_url) {
-      const isEmail = job.redirect_url.startsWith('mailto:') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(job.redirect_url);
+    const targetUrl = sanitizeApplicationUrl(job.redirect_url || job.source_url || job.url);
+    if (targetUrl) {
+      const isEmail = targetUrl.startsWith('mailto:') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetUrl);
       if (isEmail) {
         setShowEmailInstructions(true);
       } else {
         setShowOptimizeModal(false);
-        window.open(job.redirect_url, '_blank', 'noopener,noreferrer');
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
       }
     }
   };
@@ -683,13 +713,13 @@ export default function JobDetailsPage() {
                 </div>
               )}
 
-              {job.redirect_url && (
+              {(job.redirect_url || job.source_url || job.url) && (
                 <div className="pt-2 text-left">
                   <button 
                     onClick={handleApplyClick}
-                    className="w-full sm:w-auto inline-block text-center bg-[#10B981] hover:bg-emerald-500 text-white font-black text-sm px-8 py-3.5 rounded-xl uppercase tracking-widest shadow-md hover:shadow-emerald-500/20 transition-all cursor-pointer border-0"
+                    className="w-full sm:w-auto inline-block text-center bg-[#10B981] hover:bg-emerald-500 text-white font-black text-xs px-7 py-3 rounded-xl uppercase tracking-widest shadow-md hover:shadow-emerald-500/20 transition-all cursor-pointer border-0"
                   >
-                    Apply on Source Platform
+                    Apply Now
                   </button>
                 </div>
               )}
@@ -749,17 +779,17 @@ export default function JobDetailsPage() {
               </div>
 
               <div className="pt-2 space-y-3">
-                {job.redirect_url && (
+                {(job.redirect_url || job.source_url || job.url) && (
                   <button 
                     onClick={handleApplyClick}
-                    className="w-full block bg-slate-900 hover:bg-slate-800 text-white font-black text-sm py-4.5 rounded-2xl transition duration-200 uppercase tracking-widest shadow-md cursor-pointer border-0 text-center"
+                    className="w-full block bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3.5 px-6 rounded-xl transition duration-200 uppercase tracking-widest shadow-md cursor-pointer border-0 text-center"
                   >
-                    Apply on Source Platform
+                    Apply Now
                   </button>
                 )}
                 <button 
                   onClick={handleOptimizeCv}
-                  className="w-full block bg-[#10B981] hover:bg-emerald-500 text-white font-black text-sm py-4.5 rounded-2xl transition duration-200 uppercase tracking-widest shadow-md hover:shadow-emerald-500/20 cursor-pointer border-0 text-center"
+                  className="w-full block bg-[#10B981] hover:bg-emerald-500 text-white font-black text-xs py-3.5 px-6 rounded-xl transition duration-200 uppercase tracking-widest shadow-md hover:shadow-emerald-500/20 cursor-pointer border-0 text-center"
                 >
                   Optimize Resume Now
                 </button>
@@ -825,131 +855,113 @@ export default function JobDetailsPage() {
         </p>
       </footer>
 
-      {/* OPTIMIZE MODAL OVERLAY */}
+      {/* PRE-APPLICATION CV OPTIMIZATION / APPLY MODAL */}
       {showOptimizeModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-12 max-w-lg w-full shadow-2xl relative overflow-hidden space-y-8 animate-scale-in">
+          <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 max-w-lg w-full shadow-2xl relative overflow-hidden space-y-6 animate-scale-in text-left">
             <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/[0.03] rounded-full blur-3xl pointer-events-none" />
             
-            {!showEmailInstructions ? (
-              <>
-                <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-3xl mx-auto shadow-inner text-[#10B981] shadow-emerald-500/5">
-                  🚀
-                </div>
+            {(() => {
+              const targetUrl = sanitizeApplicationUrl(job.redirect_url || job.source_url || job.url);
+              const isEmailTarget = targetUrl.startsWith('mailto:') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetUrl);
+              const emailAddress = targetUrl.replace(/^mailto:/, '').trim();
 
-                <div className="space-y-4 text-center">
-                  <h3 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight leading-tight">
-                    Boost Your Application!
-                  </h3>
-                  <p className="text-sm font-semibold text-slate-650 leading-relaxed">
-                    Would you like to analyze and optimize your CV with our AI tool before applying to increase your chances?
-                  </p>
-                  {job.redirect_url && (job.redirect_url.startsWith('mailto:') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(job.redirect_url)) && (
-                    <div className="text-xs font-bold text-slate-500 bg-slate-50 border border-slate-100 rounded-xl p-3 mt-3">
-                      📧 Send your CV directly to: <strong className="text-slate-800 select-all">{job.redirect_url.replace('mailto:', '')}</strong>
+              return (
+                <>
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-[#10B981] rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-200">
+                      <span>✨ ATS Resume Matcher</span>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        setShowOptimizeModal(false);
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-slate-700 transition cursor-pointer border-0 bg-transparent rounded-full hover:bg-slate-100"
+                      aria-label="Close modal"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight leading-snug">
+                      Boost Your Chances Before Applying!
+                    </h3>
+                    <p className="text-xs md:text-sm font-medium text-slate-600 leading-relaxed">
+                      Optimize your resume using our AI builder to pass ATS filters for this role, or apply directly.
+                    </p>
+                  </div>
+
+                  {/* Option A: Primary Action */}
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🚀</span>
+                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Recommended Action</h4>
+                    </div>
+                    <button 
+                      onClick={handleOptimizeCv}
+                      className="w-full bg-[#10B981] hover:bg-emerald-500 text-white font-black text-xs py-3.5 px-6 rounded-xl uppercase tracking-widest transition duration-200 shadow-md hover:shadow-emerald-500/20 cursor-pointer border-0 text-center"
+                    >
+                      Optimize CV First ✨
+                    </button>
+                  </div>
+
+                  {/* Option B: Direct Application Action (Web URL vs Email) */}
+                  {!isEmailTarget ? (
+                    <div className="pt-2 text-center border-t border-slate-100">
+                      <button 
+                        onClick={handleApplyDirectly}
+                        className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs py-3 px-6 rounded-xl uppercase tracking-wider transition duration-200 border border-slate-200 text-center cursor-pointer"
+                      >
+                        Apply Directly ↗
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-emerald-50/50 border border-emerald-200/60 p-5 rounded-2xl space-y-4">
+                      <div className="space-y-1">
+                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <span>✉️ Direct Email Application</span>
+                        </h4>
+                        <p className="text-[11px] font-medium text-slate-600">
+                          Send your CV and required documents to:
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 bg-white p-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 select-all">
+                        <span className="truncate flex-1 font-mono">{emailAddress}</span>
+                        <button
+                          onClick={() => copyToClipboard(emailAddress, 'email')}
+                          className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition duration-150 border-0 cursor-pointer ${
+                            emailCopied 
+                              ? 'bg-emerald-500 text-white' 
+                              : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                          }`}
+                        >
+                          {emailCopied ? 'Copied! ✓' : 'Copy Email'}
+                        </button>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                        <a
+                          href={`mailto:${emailAddress}?subject=${encodeURIComponent(`Application for ${jobTitle}`)}`}
+                          className="flex-1 block bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 px-4 rounded-xl uppercase tracking-widest transition text-center shadow-sm cursor-pointer"
+                        >
+                          Open Email App 🔗
+                        </a>
+                        <button 
+                          onClick={handleApplyDirectly}
+                          className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs py-3 px-4 rounded-xl uppercase tracking-wider transition border border-slate-200 text-center cursor-pointer"
+                        >
+                          Apply Directly
+                        </button>
+                      </div>
                     </div>
                   )}
-                </div>
-
-                <div className="flex flex-col gap-3.5 pt-2">
-                  <button 
-                    onClick={handleOptimizeCv}
-                    className="w-full bg-[#10B981] hover:bg-emerald-500 text-white font-black text-sm py-4.5 rounded-2xl transition duration-200 uppercase tracking-widest shadow-md hover:shadow-emerald-500/20 cursor-pointer border-0 text-center"
-                  >
-                    ✨ Optimize CV First (Recommended)
-                  </button>
-                  <button 
-                    onClick={handleApplyDirectly}
-                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs py-4 rounded-2xl transition duration-200 uppercase tracking-widest cursor-pointer border-0 text-center"
-                  >
-                    No, Apply Directly
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-3xl mx-auto shadow-inner text-[#10B981] shadow-emerald-500/5">
-                  📧
-                </div>
-
-                <div className="space-y-4 text-center">
-                  <h3 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight leading-tight">
-                    Direct Email Application
-                  </h3>
-                  <p className="text-sm font-semibold text-slate-650 leading-relaxed">
-                    This position accepts applications directly via email. Use the copy options below to prepare your message.
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Email address field */}
-                  <div className="flex flex-col gap-1.5 text-left">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Send your CV to</label>
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-3.5">
-                      <span className="text-slate-700 font-bold text-xs truncate flex-1 select-all">
-                        {job.redirect_url?.replace(/^mailto:/, '')}
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(job.redirect_url?.replace(/^mailto:/, ''), 'email')}
-                        className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition duration-150 border-0 cursor-pointer ${
-                          emailCopied 
-                            ? 'bg-emerald-500 text-white' 
-                            : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                        }`}
-                      >
-                        {emailCopied ? 'Copied! ✓' : 'Copy'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Subject line field */}
-                  <div className="flex flex-col gap-1.5 text-left">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Suggested Subject Line</label>
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-3.5">
-                      <span className="text-slate-700 font-bold text-xs truncate flex-1 select-all">
-                        {`Application for ${jobTitle}`}
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(`Application for ${jobTitle}`, 'subject')}
-                        className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition duration-150 border-0 cursor-pointer ${
-                          subjectCopied 
-                            ? 'bg-emerald-500 text-white' 
-                            : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                        }`}
-                      >
-                        {subjectCopied ? 'Copied! ✓' : 'Copy'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3 pt-2">
-                  <button 
-                    onClick={() => {
-                      window.location.href = job.redirect_url;
-                    }}
-                    className="w-full bg-[#10B981] hover:bg-emerald-500 text-white font-black text-sm py-4.5 rounded-2xl transition duration-200 uppercase tracking-widest shadow-md hover:shadow-emerald-500/20 cursor-pointer border-0 text-center"
-                  >
-                    📬 Open Email Application
-                  </button>
-                  <button 
-                    onClick={() => setShowOptimizeModal(false)}
-                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs py-3.5 rounded-2xl transition duration-200 uppercase tracking-widest cursor-pointer border-0 text-center"
-                  >
-                    Close
-                  </button>
-                </div>
-              </>
-            )}
-
-            <button 
-              onClick={() => setShowOptimizeModal(false)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 transition cursor-pointer border-0 bg-transparent"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
