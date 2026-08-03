@@ -149,7 +149,7 @@ export default function PrivacyPolicy() {
               5. Your Rights &amp; Data Deletion
             </h2>
             <p>
-              You maintain full ownership of your personal data. You have the right to inspect, edit, or permanently request deletion of your account and uploaded CV records at any time by contacting us at <a href="mailto:privacy@genusjob.com" className="text-emerald-600 font-bold hover:underline">privacy@genusjob.com</a>.
+              You maintain full ownership of your personal data. You have the right to inspect, edit, or permanently request deletion of your account and uploaded CV records at any time by contacting us at <a href="mailto:infooesume@gmail.com" className="text-emerald-600 font-bold hover:underline">infooesume@gmail.com</a>.
             </p>
           </section>
         </div>

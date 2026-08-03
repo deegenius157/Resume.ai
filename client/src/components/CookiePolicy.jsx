@@ -125,7 +125,7 @@ export default function CookiePolicy() {
               4. Contact Us
             </h2>
             <p>
-              If you have any questions regarding our Cookie &amp; Storage Policy, please email <a href="mailto:support@genusjob.com" className="text-emerald-600 font-bold hover:underline">support@genusjob.com</a>.
+              If you have any questions regarding our Cookie &amp; Storage Policy, please email <a href="mailto:infooesume@gmail.com" className="text-emerald-600 font-bold hover:underline">infooesume@gmail.com</a>.
             </p>
           </section>
         </div>
