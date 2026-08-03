@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-
+import Footer from './Footer';
 
 const ADZUNA_APP_ID = '80388a5b';
 const ADZUNA_APP_KEY = '734f6394a33847dd19195ed41ab7fa1d';
@@ -605,11 +605,7 @@ function isExcludedRole(title = '', description = '') {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-100 bg-slate-50 py-12 px-6 md:px-12 mt-20 text-center">
-        <p className="text-xs font-black tracking-widest text-slate-400 uppercase">
-          © 2026 Genusjob Resume AI. Built by career builders.
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }

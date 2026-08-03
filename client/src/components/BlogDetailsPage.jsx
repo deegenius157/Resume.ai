@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import Footer from './Footer';
 import { supabase } from '../supabaseClient';
 
 const MOCK_ARTICLES = [
@@ -347,11 +348,7 @@ export default function BlogDetailsPage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-100 bg-slate-50 py-12 px-6 md:px-12 mt-20 text-center">
-        <p className="text-xs font-black tracking-widest text-slate-400 uppercase">
-          © 2026 Genusjob Resume AI. Built by career builders.
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }

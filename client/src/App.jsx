@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ResumeProvider } from './context/ResumeContext';
 import { WorkspaceContainer } from './components/Workspace/WorkspaceContainer';
 import { LandingPage } from './components/Landing/LandingPage';
@@ -12,7 +12,20 @@ import BlogPage from './components/BlogPage';
 import BlogDetailsPage from './components/BlogDetailsPage';
 import AboutPage from './components/AboutPage';
 import PostJobPage from './components/PostJobPage';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsAndConditions from './components/TermsAndConditions';
+import CookiePolicy from './components/CookiePolicy';
 import AdminDashboard from './components/AdminDashboard';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 
 const HomeView = ({ renderView, setCurrentView, currentUser }) => {
@@ -108,6 +121,7 @@ function App() {
   return (
     <ResumeProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<HomeView renderView={renderView} setCurrentView={setCurrentView} currentUser={currentUser} />} />
           
@@ -119,6 +133,11 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/post-job" element={<PostJobPage />} />
           <Route path="/partner" element={<PostJobPage />} />
+
+          {/* Legal Policy routes */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/cookies" element={<CookiePolicy />} />
           
           {/* Admin Dashboard */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />

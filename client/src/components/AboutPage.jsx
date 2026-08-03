@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Footer from './Footer';
 
 // MODULAR TESTIMONIALS & SUCCESS STORIES COMPONENT
 function TestimonialsSection({ showLiveOnly = false }) {
@@ -526,24 +527,7 @@ export default function AboutPage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-100 bg-slate-50 py-12 px-6 md:px-12 text-center">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs font-black tracking-widest text-slate-400 uppercase">
-            © 2026 Genusjob Resume AI. Built by career builders.
-          </p>
-          <div className="flex items-center gap-6">
-            <Link to="/jobs" className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-700 transition-colors">
-              Jobs
-            </Link>
-            <Link to="/blog" className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-700 transition-colors">
-              Blog
-            </Link>
-            <Link to="/about" className="text-xs font-black uppercase tracking-widest text-[#10B981] transition-colors">
-              About
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

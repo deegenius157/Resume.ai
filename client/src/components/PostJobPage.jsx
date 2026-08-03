@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import Footer from './Footer';
 
 function sanitizeApplicationUrl(rawUrl) {
   if (!rawUrl || typeof rawUrl !== 'string') return '';
@@ -417,19 +418,7 @@ export default function PostJobPage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-100 bg-slate-50 py-12 px-6 md:px-12 text-center">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs font-black tracking-widest text-slate-400 uppercase">
-            © 2026 Genusjob Resume AI. Built by career builders.
-          </p>
-          <div className="flex items-center gap-6">
-            <Link to="/jobs" className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-700">Jobs</Link>
-            <Link to="/blog" className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-700">Blog</Link>
-            <Link to="/about" className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-700">About</Link>
-            <Link to="/post-job" className="text-xs font-black uppercase tracking-widest text-[#10B981]">Post a Job</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
