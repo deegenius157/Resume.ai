@@ -608,7 +608,7 @@ export default function JobDetailsPage() {
               <span className="text-white text-base">✨</span>
             </div>
             <span className="text-lg md:text-2xl font-black tracking-tight text-gray-900 font-sans">
-              GENUSJOB.COM
+              GENUS AI
             </span>
           </Link>
 
