@@ -69,8 +69,8 @@ export default function Footer() {
         <div className="space-y-4">
           <div>
             <h4 className="text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">HAVE QUESTIONS? / EMAIL US</h4>
-            <a href="mailto:infooesume@gmail.com" className="text-[#10B981] hover:underline font-bold text-sm transition block">
-              infooesume@gmail.com
+            <a href="mailto:genusai001@gmail.com" className="text-[#10B981] hover:underline font-bold text-sm transition block">
+              genusai001@gmail.com
             </a>
           </div>
 

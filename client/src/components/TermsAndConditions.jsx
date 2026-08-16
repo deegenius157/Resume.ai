@@ -148,7 +148,7 @@ export default function TermsAndConditions() {
               6. Contact Information
             </h2>
             <p>
-              For questions regarding our Terms of Service, please contact our legal team at <a href="mailto:infooesume@gmail.com" className="text-emerald-600 font-bold hover:underline">infooesume@gmail.com</a>.
+              For questions regarding our Terms of Service, please contact our legal team at <a href="mailto:genusai001@gmail.com" className="text-emerald-600 font-bold hover:underline">genusai001@gmail.com</a>.
             </p>
           </section>
         </div>

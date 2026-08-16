@@ -155,7 +155,7 @@ export const SignupView = ({ onNavigate, setCurrentUser }) => {
     const templateParams = {
       to_name: userName || 'User',
       to_email: userEmail,
-      reply_to: 'infooesume@gmail.com'
+      reply_to: 'genusai001@gmail.com'
     };
 
     const serviceId = (import.meta.env.VITE_EMAILJS_SERVICE_ID || '').trim();
