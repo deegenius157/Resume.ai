@@ -237,6 +237,9 @@ export default function JobDetailsPage() {
   const [authFullName, setAuthFullName] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [authSuccess, setAuthSuccess] = useState('');
+  const [authUnconfirmed, setAuthUnconfirmed] = useState(false);
+  const [authResending, setAuthResending] = useState(false);
 
   const copyToClipboard = async (text, type) => {
     try {
@@ -282,9 +285,41 @@ export default function JobDetailsPage() {
     }
   };
 
+  const handleResendInModal = async () => {
+    if (!authEmail.trim()) {
+      setAuthError('Please enter your email address to resend the confirmation link.');
+      return;
+    }
+    setAuthResending(true);
+    setAuthError('');
+    setAuthSuccess('');
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: authEmail.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        setAuthError(error.message || 'Failed to resend confirmation email.');
+      } else {
+        setAuthSuccess(`Confirmation link sent to ${authEmail.trim()}! Please check your inbox.`);
+      }
+    } catch (err) {
+      setAuthError(err.message || 'Failed to resend confirmation email.');
+    } finally {
+      setAuthResending(false);
+    }
+  };
+
   const handleAuthSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setAuthError('');
+    setAuthSuccess('');
+    setAuthUnconfirmed(false);
     setAuthLoading(true);
 
     try {
@@ -293,7 +328,16 @@ export default function JobDetailsPage() {
           email: authEmail.trim(),
           password: authPassword
         });
-        if (error) throw error;
+        if (error) {
+          const errText = error.message || 'Authentication failed';
+          if (errText.toLowerCase().includes('email not confirmed')) {
+            setAuthUnconfirmed(true);
+            setAuthError('Your email address has not been confirmed yet. Please verify your email via the link sent to your inbox.');
+          } else {
+            setAuthError(errText);
+          }
+          return;
+        }
         
         localStorage.setItem('redirect_to_workspace', 'true');
         setShowAuthModal(false);
@@ -305,15 +349,21 @@ export default function JobDetailsPage() {
           options: {
             data: {
               full_name: authFullName.trim()
-            }
+            },
+            emailRedirectTo: `${window.location.origin}/`
           }
         });
         if (error) throw error;
         
-        alert("Account created successfully! Welcome to Genusjob.");
-        localStorage.setItem('redirect_to_workspace', 'true');
-        setShowAuthModal(false);
-        navigate('/');
+        if (data?.user && !data.session) {
+          setAuthSuccess(`Account created! A confirmation link was sent to ${authEmail.trim()}. Please check your email to activate your account.`);
+        } else if (data?.session) {
+          localStorage.setItem('redirect_to_workspace', 'true');
+          setShowAuthModal(false);
+          navigate('/');
+        } else {
+          setAuthSuccess(`Account created! Please check your email to verify your account.`);
+        }
       }
     } catch (err) {
       setAuthError(err.message || 'Authentication failed. Please try again.');
@@ -1008,8 +1058,29 @@ export default function JobDetailsPage() {
 
             {/* Error Banner */}
             {authError && (
-              <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs font-bold text-center">
-                ❌ {authError}
+              <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs font-semibold text-left space-y-2">
+                <div className="flex items-start gap-2">
+                  <span>⚠️</span>
+                  <span>{authError}</span>
+                </div>
+                {authUnconfirmed && (
+                  <button
+                    type="button"
+                    onClick={handleResendInModal}
+                    disabled={authResending}
+                    className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-black text-[10px] uppercase tracking-widest py-2.5 px-4 rounded-lg transition text-center cursor-pointer border-0"
+                  >
+                    {authResending ? 'Resending Link...' : 'Resend Confirmation Email ✉️'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Success Banner */}
+            {authSuccess && (
+              <div className="p-3.5 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold text-left flex items-start gap-2">
+                <span>✓</span>
+                <span>{authSuccess}</span>
               </div>
             )}
 
