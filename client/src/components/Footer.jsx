@@ -12,10 +12,10 @@ export default function Footer() {
             className="flex items-center gap-1 hover:opacity-85 transition inline-block"
           >
             <span className="text-lg font-extrabold tracking-tight text-white font-sans">GENUS</span>
-            <span className="text-lg font-medium tracking-tight text-[#10B981] font-sans">AI</span>
+            <span className="text-lg font-medium tracking-tight text-[#10B981] font-sans">JOB.COM</span>
           </Link>
           <p className="leading-relaxed text-slate-300 text-xs">
-            The AI education and Vibe Coding platform empowering African students, freelancers, and builders.
+            The world's most powerful AI resume builder and verified remote career ecosystem.
           </p>
           <a
             href="https://deegeniousweb.pyfib.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAdGRleASRIF9leHRuA2FlbQIxMQBzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQAAaeVqS87Xe9_umYm9qhK_BGpFbV-41m9T9auEpM-beM052i8hIhG0tyts3pRfw_aem_YWlNzvLp3yZvUMA8GqE6LQ"
@@ -32,19 +32,19 @@ export default function Footer() {
           <h4 className="text-white font-bold text-xs uppercase tracking-wider">Platform</h4>
           <ul className="space-y-2 text-xs font-semibold text-slate-300">
             <li>
-              <Link to="/course/free" className="text-[#10B981] hover:underline font-bold transition-colors">Free Vibe Coding Course</Link>
+              <Link to="/jobs" className="hover:text-[#10B981] transition-colors">Remote Jobs</Link>
             </li>
             <li>
-              <Link to="/jobs" className="hover:text-[#10B981] transition-colors">Jobs &amp; Projects</Link>
-            </li>
-            <li>
-              <Link to="/blog" className="hover:text-[#10B981] transition-colors">AI Tools &amp; Guides</Link>
+              <Link to="/blog" className="hover:text-[#10B981] transition-colors">Career Blog</Link>
             </li>
             <li>
               <Link to="/about" className="hover:text-[#10B981] transition-colors">About Us</Link>
             </li>
             <li>
-              <Link to="/post-job" className="hover:text-[#10B981] transition-colors">Post a Job / Partner</Link>
+              <Link to="/post-job" className="text-[#10B981] hover:underline font-bold transition-colors">Post a Job / Partner</Link>
+            </li>
+            <li>
+              <Link to="/" className="hover:text-[#10B981] transition-colors">AI Resume Builder</Link>
             </li>
           </ul>
         </div>
@@ -92,7 +92,7 @@ export default function Footer() {
       </div>
 
       <div className="max-w-6xl mx-auto border-t border-slate-800 pt-8 text-center text-xs tracking-wide text-slate-400">
-        &copy; 2026 Genus AI. All rights reserved. Empowering African builders.
+        &copy; 2026 Genusjob Resume AI. All rights reserved. Built by career builders.
       </div>
     </footer>
   );

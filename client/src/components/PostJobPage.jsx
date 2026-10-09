@@ -1,126 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { Link } from 'react-router-dom';
 import Footer from './Footer';
 
-function sanitizeApplicationUrl(rawUrl) {
-  if (!rawUrl || typeof rawUrl !== 'string') return '';
-  let url = rawUrl.trim();
-  url = url.replace(/[\>\"\'\`\)]+$/, '');
-
-  if (!url.startsWith('mailto:') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url)) {
-    return `mailto:${url}`;
-  }
-
-  if (url.startsWith('mailto:')) {
-    return url;
-  }
-
-  if (!/^https?:\/\//i.test(url)) {
-    if (url.startsWith('//')) {
-      url = `https:${url}`;
-    } else {
-      url = `https://${url}`;
-    }
-  }
-
-  try {
-    const parsed = new URL(url);
-    return parsed.href;
-  } catch (e) {
-    return url;
-  }
-}
-
-function slugify(text) {
-  if (!text) return 'position';
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-');
-}
-
 export default function PostJobPage() {
-  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Form fields
-  const [company, setCompany] = useState('');
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('AI & Automation');
-  const [jobType, setJobType] = useState('Full-Time');
-  const [location, setLocation] = useState('Remote (Global)');
-  const [salary, setSalary] = useState('');
-  const [applicationUrl, setApplicationUrl] = useState('');
-  const [description, setDescription] = useState('');
-
-  // Status states
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [createdJob, setCreatedJob] = useState(null);
-
   useEffect(() => {
-    document.title = 'Post a Remote Job | GenusJob Recruiter Portal';
+    document.title = 'Post a Job & Hire Talent | GenusJob Recruiter Portal';
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
       metaDesc.setAttribute(
         'content',
-        'Post your remote job listing to reach thousands of verified tech, AI, and remote professionals on GenusJob.'
+        'Post your job listing to reach thousands of verified candidates and tech professionals across Nigeria and globally on GenusJob.'
       );
     }
   }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMsg('');
-
-    if (!company.trim() || !title.trim() || !applicationUrl.trim() || !description.trim()) {
-      setErrorMsg('Please fill in all required fields (Company, Job Title, Application Link/Email, and Description).');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const sanitizedUrl = sanitizeApplicationUrl(applicationUrl.trim());
-      const randomSuffix = Math.random().toString(36).substring(2, 7);
-      const uniqueJobId = `recruiter_${Date.now()}_${randomSuffix}`;
-      const uniqueSlug = `${slugify(title)}-${randomSuffix}`;
-
-      const newJobRecord = {
-        job_id: uniqueJobId,
-        title: title.trim(),
-        company: company.trim(),
-        category: category,
-        job_type: jobType,
-        location: location.trim() || 'Remote (Global)',
-        salary: salary.trim() || null,
-        source_url: sanitizedUrl,
-        url: uniqueSlug,
-        description: description.trim(),
-        source: 'direct_recruiter',
-        created_at: new Date().toISOString()
-      };
-
-      const { data, error } = await supabase
-        .from('jobs')
-        .insert([newJobRecord])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCreatedJob(data || newJobRecord);
-    } catch (err) {
-      console.error('Failed to post job:', err);
-      setErrorMsg(err.message || 'Failed to post job listing. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#1F2937] font-sans antialiased selection:bg-emerald-500 selection:text-white relative">
@@ -136,55 +30,49 @@ export default function PostJobPage() {
               <span className="text-white text-base">✨</span>
             </div>
             <span className="text-lg md:text-2xl font-black tracking-tight text-gray-900 font-sans">
-              GENUS AI
+              GENUSJOB.COM
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
-            <Link to="/jobs" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors">
-              Jobs
-            </Link>
-            <Link to="/blog" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors">
-              Blog
-            </Link>
-            <Link to="/about" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors">
-              About
-            </Link>
-            <Link to="/post-job" className="text-xs font-black uppercase tracking-widest text-[#10B981] transition-colors">
-              Post a Job
-            </Link>
-            <Link to="/" className="bg-[#10B981] hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest px-4 py-2 rounded-full transition shadow-lg shadow-emerald-500/10">
-              Build Resume
+          <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-600">
+            <Link to="/" className="hover:text-emerald-600 transition">Resume Builder</Link>
+            <Link to="/jobs" className="hover:text-emerald-600 transition">Browse Jobs</Link>
+            <Link to="/blog" className="hover:text-emerald-600 transition">Career Blog</Link>
+            <Link to="/about" className="hover:text-emerald-600 transition">About Us</Link>
+          </nav>
+
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              to="/jobs"
+              className="bg-[#10B981] hover:bg-emerald-600 text-white text-xs font-black uppercase tracking-widest px-5 py-2.5 rounded-full shadow-sm transition"
+            >
+              Browse Jobs
             </Link>
           </div>
 
-          {/* Mobile Hamburger Toggle Button */}
+          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="block md:hidden p-1.5 text-slate-650 hover:text-slate-900 focus:outline-none"
+            className="md:hidden p-2 text-slate-600 focus:outline-none"
             aria-label="Toggle navigation menu"
           >
-            {isMenuOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {isMenuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              ) : (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
+              )}
+            </svg>
           </button>
         </div>
 
-        {/* Mobile Dropdown Container */}
+        {/* Mobile Dropdown */}
         {isMenuOpen && (
-          <div className="md:hidden border-t border-slate-100 bg-[#FFFFFF] px-4 py-4 flex flex-col gap-3.5 shadow-lg transition-all duration-200">
-            <Link to="/jobs" onClick={() => setIsMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-slate-650 hover:text-slate-900 py-1">Jobs</Link>
-            <Link to="/blog" onClick={() => setIsMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-slate-650 hover:text-slate-900 py-1">Blog</Link>
-            <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-slate-650 hover:text-slate-900 py-1">About</Link>
-            <Link to="/post-job" onClick={() => setIsMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-[#10B981] py-1">Post a Job</Link>
-            <Link to="/" onClick={() => setIsMenuOpen(false)} className="bg-[#10B981] text-white text-xs font-black uppercase tracking-widest px-4 py-3 rounded-xl text-center shadow-md mt-1">Build Resume</Link>
+          <div className="md:hidden border-t border-slate-100 bg-white px-4 py-4 flex flex-col gap-3">
+            <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-xs font-bold text-slate-700 py-1">Resume Builder</Link>
+            <Link to="/jobs" onClick={() => setIsMenuOpen(false)} className="text-xs font-bold text-slate-700 py-1">Browse Jobs</Link>
+            <Link to="/blog" onClick={() => setIsMenuOpen(false)} className="text-xs font-bold text-slate-700 py-1">Career Blog</Link>
+            <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-xs font-bold text-slate-700 py-1">About Us</Link>
           </div>
         )}
       </header>
@@ -198,223 +86,93 @@ export default function PostJobPage() {
           </div>
 
           <h1 className="text-3xl md:text-5xl font-black text-slate-900 uppercase tracking-tight leading-[1.15]">
-            Post a Remote Job &amp; Reach <span className="text-[#10B981]">Top Global Talent</span>
+            Post a Job &amp; Reach <span className="text-[#10B981]">Top Verified Talent</span>
           </h1>
 
           <p className="text-base md:text-lg font-medium text-slate-600 leading-relaxed">
-            Publish your position directly to thousands of verified, highly-motivated remote candidates equipped with modern AI skills.
+            Reach thousands of active, motivated candidates across Nigeria and internationally on GenusJob.
           </p>
         </section>
 
-        {/* SUCCESS STATE DISPLAY */}
-        {createdJob ? (
-          <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 md:p-12 text-center space-y-6 shadow-2xl relative overflow-hidden">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-[#10B981] border border-emerald-500/30 flex items-center justify-center text-3xl mx-auto">
-              🎉
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight">
-                Position Published Successfully!
-              </h2>
-              <p className="text-sm font-medium text-slate-300 max-w-md mx-auto">
-                Your job listing for <strong className="text-white">{createdJob.title}</strong> at <strong className="text-white">{createdJob.company}</strong> is now live on GenusJob.
-              </p>
-            </div>
-
-            <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to={`/jobs/${createdJob.job_id || createdJob.id}-${slugify(createdJob.title)}`}
-                className="bg-[#10B981] hover:bg-emerald-500 text-white font-black text-xs px-8 py-3.5 rounded-xl uppercase tracking-widest transition shadow-lg shadow-emerald-500/20"
-              >
-                View Live Listing ↗
-              </Link>
-              <button
-                onClick={() => {
-                  setCreatedJob(null);
-                  setTitle('');
-                  setCompany('');
-                  setSalary('');
-                  setApplicationUrl('');
-                  setDescription('');
-                }}
-                className="bg-slate-800 hover:bg-slate-700 text-white font-black text-xs px-8 py-3.5 rounded-xl uppercase tracking-widest transition border border-slate-700"
-              >
-                Post Another Job +
-              </button>
-            </div>
+        {/* CONTACT / RECRUITER SUBMISSION CARD */}
+        <section className="bg-white border border-slate-200/90 rounded-[2.5rem] p-8 md:p-14 shadow-sm space-y-8 text-center max-w-2xl mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-[#10B981] flex items-center justify-center text-3xl mx-auto border border-emerald-100">
+            📬
           </div>
-        ) : (
-          /* JOB POSTING FORM */
-          <form onSubmit={handleSubmit} className="bg-white border border-slate-200/90 rounded-[2.5rem] p-8 md:p-12 shadow-sm space-y-8 text-left">
-            {errorMsg && (
-              <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold uppercase tracking-wide">
-                ⚠️ {errorMsg}
-              </div>
-            )}
 
-            <div className="space-y-6">
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-3">
-                1. Company &amp; Position Details
-              </h3>
+          <div className="space-y-3">
+            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+              Publish Your Job Listing
+            </h2>
+            <p className="text-sm font-medium text-slate-600 leading-relaxed max-w-md mx-auto">
+              All job postings on GenusJob are verified and manually published by our team to maintain quality. Send us your job details via email or WhatsApp and we will review and publish it for you within 24 hours.
+            </p>
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Company Name */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-700">
-                    Company Name <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Acme Corporation"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 transition"
-                  />
-                </div>
+          {/* WHAT TO INCLUDE */}
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 text-left space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
+              Please include in your message:
+            </h3>
+            <ul className="text-xs font-medium text-slate-600 space-y-2">
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> Company Name &amp; Website
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> Job Title, Role Type (Full-Time, Remote, Hybrid, etc.) &amp; Location
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> Responsibilities, Requirements &amp; Salary (if applicable)
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> Application Link or Email address
+              </li>
+            </ul>
+          </div>
 
-                {/* Job Title */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-700">
-                    Job Title <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Senior Python & AI Engineer"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 transition"
-                  />
-                </div>
-              </div>
+          {/* ACTION BUTTONS */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="mailto:genusai001@gmail.com?subject=Job%20Posting%20Submission%20-%20GenusJob"
+              className="w-full sm:w-auto bg-[#10B981] hover:bg-emerald-600 text-white font-black text-xs px-8 py-4 rounded-xl uppercase tracking-widest transition shadow-lg shadow-emerald-500/20 text-center flex items-center justify-center gap-2"
+            >
+              <span>✉️</span> Email Your Job
+            </a>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Category Dropdown */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-700">
-                    Category <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 transition"
-                  >
-                    <option value="AI & Automation">⚡ AI &amp; Automation</option>
-                    <option value="Software Engineering">💻 Software Engineering</option>
-                    <option value="UI/UX Design">🎨 UI/UX Design</option>
-                    <option value="Growth & Operations">📈 Growth &amp; Operations</option>
-                    <option value="Customer Experience">💬 Customer Experience</option>
-                    <option value="Data & Analytics">📊 Data &amp; Analytics</option>
-                  </select>
-                </div>
+            <a
+              href="https://wa.me/2348130001427?text=Hello%20GenusJob,%20I%20would%20like%20to%20publish%20a%20job%20listing."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto bg-slate-900 hover:bg-black text-white font-black text-xs px-8 py-4 rounded-xl uppercase tracking-widest transition text-center flex items-center justify-center gap-2"
+            >
+              <span>💬</span> Message via WhatsApp
+            </a>
+          </div>
 
-                {/* Job Type Dropdown */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-700">
-                    Job Type <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={jobType}
-                    onChange={(e) => setJobType(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 transition"
-                  >
-                    <option value="Full-Time">Full-Time</option>
-                    <option value="Part-Time">Part-Time</option>
-                    <option value="Contract">Contract</option>
-                    <option value="Freelance">Freelance</option>
-                    <option value="Internship">Internship</option>
-                  </select>
-                </div>
+          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2 font-medium">
+            <span>Direct Email: <strong className="text-slate-800">genusai001@gmail.com</strong></span>
+            <span>WhatsApp: <strong className="text-slate-800">+234 813 000 1427</strong></span>
+          </div>
+        </section>
 
-                {/* Location / Work Arrangement */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-700">
-                    Location / Work Arrangement
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Remote (Global) or Lagos (Hybrid)"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 transition"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-3">
-                2. Application Method &amp; Compensation
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Application Link or Email */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-700">
-                    Application Link or Email <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="https://company.com/apply OR careers@company.com"
-                    value={applicationUrl}
-                    onChange={(e) => setApplicationUrl(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 transition"
-                  />
-                  <p className="text-[10px] font-semibold text-slate-400">
-                    Enter your careers page application URL or direct receiving email address.
-                  </p>
-                </div>
-
-                {/* Salary Range */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-700">
-                    Salary Range / Compensation
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. $3,000 - $5,000 / month"
-                    value={salary}
-                    onChange={(e) => setSalary(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 transition"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-3">
-                3. Role Description &amp; Requirements
-              </h3>
-
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-700">
-                  Detailed Description <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows={8}
-                  required
-                  placeholder="Outline the responsibilities, key qualifications, benefits, and required skills for this position..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-800 focus:outline-none focus:border-emerald-500 transition leading-relaxed"
-                />
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-[#10B981] hover:bg-emerald-500 disabled:bg-slate-300 text-white font-black text-sm py-4 rounded-xl uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition cursor-pointer border-0 text-center"
-              >
-                {isSubmitting ? 'Publishing Position...' : 'Publish Remote Job Now ✨'}
-              </button>
-            </div>
-          </form>
-        )}
+        {/* BENEFITS SECTION */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-2">
+            <div className="text-2xl">🎯</div>
+            <h4 className="font-black text-sm uppercase tracking-tight text-slate-900">Targeted Audience</h4>
+            <p className="text-xs font-medium text-slate-600 leading-relaxed">Reach candidates actively building professional CVs and seeking opportunities.</p>
+          </div>
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-2">
+            <div className="text-2xl">⚡</div>
+            <h4 className="font-black text-sm uppercase tracking-tight text-slate-900">Quick Turnaround</h4>
+            <p className="text-xs font-medium text-slate-600 leading-relaxed">Jobs are verified and published rapidly with direct links to your application channels.</p>
+          </div>
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-2">
+            <div className="text-2xl">🌍</div>
+            <h4 className="font-black text-sm uppercase tracking-tight text-slate-900">Broad Reach</h4>
+            <p className="text-xs font-medium text-slate-600 leading-relaxed">Exposure across Nigeria, Africa, and global remote job seekers.</p>
+          </div>
+        </section>
       </main>
 
       {/* FOOTER */}

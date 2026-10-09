@@ -12,7 +12,6 @@ import BlogPage from './components/BlogPage';
 import BlogDetailsPage from './components/BlogDetailsPage';
 import AboutPage from './components/AboutPage';
 import PostJobPage from './components/PostJobPage';
-import FreeCoursePage from './components/FreeCoursePage';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsAndConditions from './components/TermsAndConditions';
 import CookiePolicy from './components/CookiePolicy';
@@ -126,9 +125,6 @@ function App() {
         <Routes>
           <Route path="/" element={<HomeView renderView={renderView} setCurrentView={setCurrentView} currentUser={currentUser} />} />
           
-          {/* Vibe Coding Course routes */}
-          <Route path="/course/free" element={<FreeCoursePage />} />
-
           {/* SEO Job Board & Blog routes */}
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/jobs/:idSlug" element={<JobDetailsPage />} />

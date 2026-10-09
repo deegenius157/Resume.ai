@@ -5,18 +5,22 @@ import { supabase } from '../supabaseClient';
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Form states
   const [title, setTitle] = useState('');
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
+  const [jobType, setJobType] = useState('Full-Time');
+  const [salary, setSalary] = useState('');
+  const [status, setStatus] = useState('published');
+  const [deadline, setDeadline] = useState('');
+  const [sourceUrl, setSourceUrl] = useState('');
   const [description, setDescription] = useState('');
   const [requirements, setRequirements] = useState('');
   const [benefits, setBenefits] = useState('');
-  const [deadline, setDeadline] = useState('');
-  const [sourceUrl, setSourceUrl] = useState('');
-  
+
   // Submit states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -89,28 +93,67 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
     }
   };
 
+  const verifyAdminRole = async (userSession) => {
+    if (!userSession?.user?.id) {
+      setIsAdmin(false);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userSession.user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error verifying profile role:', error.message);
+      }
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true);
+        fetchJobs();
+      } else {
+        setIsAdmin(false);
+        // Non-admin signed-in user: redirect to homepage
+        navigate('/');
+      }
+    } catch (err) {
+      console.error('Admin verification failure:', err);
+      setIsAdmin(false);
+      navigate('/');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Check initial session
     supabase.auth.getSession().then(({ data: { session: activeSession } }) => {
       setSession(activeSession);
-      setIsLoading(false);
+      if (activeSession) {
+        verifyAdminRole(activeSession);
+      } else {
+        setIsLoading(false);
+      }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, activeSession) => {
       setSession(activeSession);
+      if (activeSession) {
+        verifyAdminRole(activeSession);
+      } else {
+        setIsAdmin(false);
+        setIsLoading(false);
+      }
     });
 
     return () => {
       subscription?.unsubscribe();
     };
-  }, []);
-
-  useEffect(() => {
-    if (session) {
-      fetchJobs();
-    }
-  }, [session]);
+  }, [navigate]);
 
   const handleAdminLogin = async (e) => {
     e.preventDefault();
@@ -125,9 +168,9 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
 
       if (error) throw error;
       setSession(data.session);
+      await verifyAdminRole(data.session);
     } catch (err) {
       setAuthError(err.message || 'Authentication failed');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -135,6 +178,8 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setSession(null);
+    setIsAdmin(false);
+    navigate('/');
   };
 
   const handleFormSubmit = async (e) => {
@@ -150,7 +195,6 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
     }
 
     try {
-      // Generate a unique job_id for manual entries to satisfy the unique constraint
       const uniqueManualId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       const slugify = (text) => {
@@ -170,13 +214,16 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
         }
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('jobs')
         .insert([
           {
             title: title.trim(),
             company: company.trim(),
             location: location.trim(),
+            job_type: jobType,
+            salary: salary.trim() || null,
+            status: status,
             description: description.trim(),
             requirements: requirements.trim(),
             benefits: benefits.trim(),
@@ -194,38 +241,18 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
       setSuccessMsg('🎉 Job posting successfully created and saved in Supabase database!');
       fetchJobs();
 
-      // IndexNow notification (runs silently in the background)
-      const notifyIndexNow = async () => {
-        const jobUrl = uniqueUrl;
-
-        try {
-          await fetch('https://api.indexnow.org/indexnow', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify({
-              host: 'genusjob.com',
-              key: '8f8a92b23c2d4e7f8051ab6a7c8d9e0f',
-              keyLocation: 'https://genusjob.com/8f8a92b23c2d4e7f8051ab6a7c8d9e0f.txt',
-              urlList: [jobUrl]
-            })
-          });
-        } catch (err) {
-          console.error('IndexNow submission failed:', err);
-        }
-      };
-      notifyIndexNow();
-      
       // Reset form fields
       setTitle('');
       setCompany('');
       setLocation('');
+      setJobType('Full-Time');
+      setSalary('');
+      setStatus('published');
+      setDeadline('');
+      setSourceUrl('');
       setDescription('');
       setRequirements('');
       setBenefits('');
-      setDeadline('');
-      setSourceUrl('');
     } catch (err) {
       setErrorMsg(`❌ Failed to insert job posting: ${err.message}`);
     } finally {
@@ -237,13 +264,13 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 font-sans">
         <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-xs font-black uppercase tracking-widest text-slate-400">Verifying Admin Session...</p>
+        <p className="mt-4 text-xs font-black uppercase tracking-widest text-slate-400">Verifying Admin Permissions...</p>
       </div>
     );
   }
 
-  // Enforce basic client-side authentication
-  if (!session) {
+  // Not logged in: show admin login portal
+  if (!session || !isAdmin) {
     return (
       <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-slate-50 p-6 font-sans">
         <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200 p-8 md:p-10 flex flex-col animate-scale-in">
@@ -257,7 +284,7 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
           </div>
 
           <h2 className="text-2xl font-black text-slate-800 tracking-tight text-center mb-2">Admin Control Hub</h2>
-          <p className="text-xs font-semibold text-slate-450 text-center mb-8">Sign in below to manage the GenusJob platform listings.</p>
+          <p className="text-xs font-semibold text-slate-450 text-center mb-8">Sign in below with an admin account to manage listings.</p>
 
           {authError && (
             <div className="p-3.5 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold text-center border border-rose-100 mb-6">
@@ -270,11 +297,11 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 text-left">Admin Email</label>
               <input
                 type="email"
-                placeholder="admin@company.com"
                 required
+                placeholder="admin@genusjob.com"
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl py-3.5 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-3 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 font-bold"
               />
             </div>
 
@@ -282,24 +309,25 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 text-left">Password</label>
               <input
                 type="password"
-                placeholder="••••••••"
                 required
+                placeholder="••••••••••••"
                 value={authPassword}
                 onChange={(e) => setAuthPassword(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl py-3.5 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-3 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 font-bold"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-4 rounded-xl transition duration-200 uppercase tracking-widest shadow-md cursor-pointer border-0 mt-4"
+              disabled={isLoading}
+              className="w-full bg-slate-900 hover:bg-black text-white font-black text-xs uppercase tracking-widest py-3.5 rounded-xl transition duration-150 shadow-md cursor-pointer mt-2"
             >
-              Authenticate Session
+              Sign In As Admin
             </button>
           </form>
 
-          <Link to="/jobs" className="mt-6 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-emerald-600 transition-colors text-center focus:outline-none">
-            ← Back to Careers Board
+          <Link to="/" className="mt-6 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-emerald-600 transition-colors text-center focus:outline-none">
+            ← Back to GenusJob Home
           </Link>
 
         </div>
@@ -326,7 +354,7 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
 
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-            👤 Session: <strong className="text-slate-800">{session.user.email}</strong>
+            👤 Admin: <strong className="text-slate-800">{session?.user?.email}</strong>
           </span>
           <button 
             onClick={handleLogout}
@@ -347,7 +375,7 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
               ← Back to Job Board
             </Link>
             <h1 className="text-3xl font-black text-slate-800 uppercase tracking-tight">Manual Job Insertion</h1>
-            <p className="text-xs font-semibold text-slate-500">Insert custom premium listings directly into the Supabase database. These listings will appear immediately on the careers page.</p>
+            <p className="text-xs font-semibold text-slate-500">Insert custom verified listings directly into the Supabase database with role-based admin controls.</p>
           </div>
 
           {/* Feedback alerts */}
@@ -392,7 +420,7 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex flex-col gap-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Location <span className="text-rose-500">*</span></label>
                 <input
@@ -406,12 +434,53 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
               </div>
 
               <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Job Type</label>
+                <select
+                  value={jobType}
+                  onChange={(e) => setJobType(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-3.5 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
+                >
+                  <option value="Full-Time">Full-Time</option>
+                  <option value="Part-Time">Part-Time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Internship">Internship</option>
+                  <option value="Remote">Remote</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Publication Status</label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-3.5 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
+                >
+                  <option value="published">Published (Live)</option>
+                  <option value="draft">Draft (Hidden)</option>
+                  <option value="expired">Expired (Hidden)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Salary / Compensation (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. ₦350,000 - ₦500,000 / month or $2,500/mo"
+                  value={salary}
+                  onChange={(e) => setSalary(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl py-3.5 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Application Deadline</label>
                 <input
                   type="date"
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-3 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-3.5 px-4 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all font-bold"
                 />
               </div>
             </div>
@@ -500,6 +569,8 @@ ${requirementsSnippet || 'Standard qualifications apply.'}
                           if (j.company && j.company.toLowerCase() !== 'hiring company') parts.push(`🏢 ${j.company}`);
                           if (j.location) parts.push(`📍 ${j.location}`);
                           if (j.job_type) parts.push(`💼 ${j.job_type}`);
+                          if (j.salary) parts.push(`💰 ${j.salary}`);
+                          if (j.status) parts.push(`⚡ ${j.status}`);
                           if (j.deadline) parts.push(`📅 ${j.deadline}`);
                           return parts.length > 0 ? parts.join('  •  ') : 'NO METADATA';
                         })()}
