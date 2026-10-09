@@ -3,9 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Footer from './Footer';
 
-const ADZUNA_APP_ID = '80388a5b';
-const ADZUNA_APP_KEY = '734f6394a33847dd19195ed41ab7fa1d';
-
 const MOCK_JOBS = [
   {
     id: 'mock_job_1',
@@ -282,7 +279,7 @@ function isExcludedRole(title = '', description = '') {
               <span className="text-white text-base">✨</span>
             </div>
             <span className="text-lg md:text-2xl font-black tracking-tight text-gray-900 font-sans">
-              GENUS AI
+              GENUSJOB.COM
             </span>
           </Link>
 

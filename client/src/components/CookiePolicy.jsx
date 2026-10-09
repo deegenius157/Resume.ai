@@ -26,7 +26,7 @@ export default function CookiePolicy() {
               <span className="text-white text-base">✨</span>
             </div>
             <span className="text-lg md:text-2xl font-black tracking-tight text-gray-900 font-sans">
-              GENUS AI
+              GENUSJOB.COM
             </span>
           </Link>
 
@@ -125,7 +125,7 @@ export default function CookiePolicy() {
               4. Contact Us
             </h2>
             <p>
-              If you have any questions regarding our Cookie &amp; Storage Policy, please email <a href="mailto:genusai001@gmail.com" className="text-emerald-600 font-bold hover:underline">genusai001@gmail.com</a>.
+              If you have any questions regarding our Cookie &amp; Storage Policy, please email <a href="mailto:infooesume@gmail.com" className="text-emerald-600 font-bold hover:underline">infooesume@gmail.com</a>.
             </p>
           </section>
         </div>
