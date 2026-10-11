@@ -5,7 +5,6 @@ import Footer from '../Footer';
 export const LandingPage = ({ setCurrentView }) => {
   const homeRef = React.useRef(null);
   const featuresRef = React.useRef(null);
-  const testimonialsRef = React.useRef(null);
   const contactRef = React.useRef(null);
 
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -31,10 +30,11 @@ export const LandingPage = ({ setCurrentView }) => {
 
           {/* Navigation Links */}
           <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-slate-600">
-            <button onClick={() => scrollToSection(homeRef)} className="hover:text-slate-900 transition">Home</button>
-            <button onClick={() => scrollToSection(featuresRef)} className="hover:text-slate-900 transition">Features</button>
-            <button onClick={() => scrollToSection(testimonialsRef)} className="hover:text-slate-900 transition">Testimonials</button>
-            <button onClick={() => scrollToSection(contactRef)} className="hover:text-slate-900 transition">Contact</button>
+            <button onClick={() => scrollToSection(homeRef)} className="hover:text-slate-900 transition cursor-pointer">Home</button>
+            <Link to="/jobs" className="hover:text-slate-900 transition">Browse Jobs</Link>
+            <button onClick={() => scrollToSection(featuresRef)} className="hover:text-slate-900 transition cursor-pointer">Features</button>
+            <Link to="/about" className="hover:text-slate-900 transition">About Us</Link>
+            <button onClick={() => scrollToSection(contactRef)} className="hover:text-slate-900 transition cursor-pointer">Contact</button>
           </nav>
 
           {/* Right Action Buttons */}
@@ -42,7 +42,7 @@ export const LandingPage = ({ setCurrentView }) => {
             {/* GET STARTED BUTTON */}
             <button
               onClick={() => setCurrentView('signup')}
-              className="bg-[#10B981] hover:bg-[#0E9F6E] text-white text-[10px] md:text-xs font-bold px-3 py-1.5 md:px-5 md:py-2.5 rounded-full shadow-sm transition"
+              className="bg-[#10B981] hover:bg-[#0E9F6E] text-white text-[10px] md:text-xs font-bold px-3 py-1.5 md:px-5 md:py-2.5 rounded-full shadow-sm transition cursor-pointer"
             >
               Get started
             </button>
@@ -50,7 +50,7 @@ export const LandingPage = ({ setCurrentView }) => {
             {/* LOGIN BUTTON */}
             <button
               onClick={() => setCurrentView('login')}
-              className="border border-slate-200 text-slate-700 text-[10px] md:text-xs font-bold px-3 py-1.5 md:px-5 md:py-2.5 rounded-full hover:bg-slate-50 transition"
+              className="border border-slate-200 text-slate-700 text-[10px] md:text-xs font-bold px-3 py-1.5 md:px-5 md:py-2.5 rounded-full hover:bg-slate-50 transition cursor-pointer"
             >
               Login
             </button>
@@ -83,18 +83,26 @@ export const LandingPage = ({ setCurrentView }) => {
             >
               Home
             </button>
+            <Link
+              to="/jobs"
+              onClick={() => setIsMenuOpen(false)}
+              className="text-left text-xs font-black uppercase tracking-widest text-slate-655 hover:text-slate-900 py-1 transition-colors"
+            >
+              Browse Jobs
+            </Link>
             <button
               onClick={() => { scrollToSection(featuresRef); setIsMenuOpen(false); }}
               className="text-left text-xs font-black uppercase tracking-widest text-slate-655 hover:text-slate-900 py-1 transition-colors"
             >
               Features
             </button>
-            <button
-              onClick={() => { scrollToSection(testimonialsRef); setIsMenuOpen(false); }}
+            <Link
+              to="/about"
+              onClick={() => setIsMenuOpen(false)}
               className="text-left text-xs font-black uppercase tracking-widest text-slate-655 hover:text-slate-900 py-1 transition-colors"
             >
-              Testimonials
-            </button>
+              About Us
+            </Link>
             <button
               onClick={() => { scrollToSection(contactRef); setIsMenuOpen(false); }}
               className="text-left text-xs font-black uppercase tracking-widest text-slate-655 hover:text-slate-900 py-1 transition-colors"
@@ -123,54 +131,35 @@ export const LandingPage = ({ setCurrentView }) => {
       <section ref={homeRef} className="pt-16 pb-20 px-6 max-w-4xl mx-auto text-center relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,transparent_60%)] pointer-events-none"></div>
 
-        {/* SOCIAL PROOF CLUSTER */}
-        <div className="flex flex-col items-center gap-3 mb-10 relative z-10">
-          <div className="flex items-center -space-x-2.5">
-            <img className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="user" />
-            <img className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="user" />
-            <img className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="user" />
-            <img className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80" alt="user" />
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="text-amber-400 text-xs tracking-widest font-black transition-transform hover:scale-110">★★★★★</div>
-            <p className="text-[10px] font-black text-slate-500 tracking-widest mt-1 uppercase opacity-60">Used by 10,000+ users</p>
+        {/* HONEST TAGLINE PILL */}
+        <div className="flex flex-col items-center mb-8 relative z-10">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-[#10B981] text-xs font-extrabold uppercase tracking-wider px-5 py-2 rounded-full border border-emerald-500/20">
+            <span>✨ Free resume builder and verified job listings.</span>
           </div>
         </div>
 
-        <h1 className="text-5xl md:text-6xl font-[900] tracking-tight text-slate-900 mb-8 leading-[1.1] relative z-10 max-w-3xl text-balance">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-[900] tracking-tight text-slate-900 mb-8 leading-[1.1] relative z-10 max-w-3xl mx-auto text-balance">
           Land your dream job with <br />
           <span className="text-[#10B981]">AI-powered</span> resumes.
         </h1>
 
-        <p className="text-slate-700 text-sm md:text-base max-w-xl mb-12 leading-relaxed relative z-10 font-medium">
-          Create, edit and download professional resumes with <br className="hidden md:block" /> AI-powered assistance in minutes.
+        <p className="text-slate-700 text-sm md:text-base max-w-xl mx-auto mb-12 leading-relaxed relative z-10 font-medium">
+          Create, edit and download professional resumes with <br className="hidden md:block" /> AI-powered assistance in minutes—and apply to verified remote and international jobs.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10 w-full max-w-md mx-auto px-4">
           <button 
             onClick={() => setCurrentView('signup')} 
-            className="w-full sm:w-auto bg-[#10B981] hover:bg-[#0E9F6E] text-white text-xs font-black uppercase tracking-widest px-8 py-4 rounded-full shadow-lg shadow-emerald-200 transition-all transform hover:-translate-y-0.5 active:scale-95 text-center"
+            className="w-full sm:w-auto bg-[#10B981] hover:bg-[#0E9F6E] text-white text-xs font-black uppercase tracking-widest px-8 py-4 rounded-full shadow-lg shadow-emerald-200 transition-all transform hover:-translate-y-0.5 active:scale-95 text-center cursor-pointer"
           >
-            Get started &rarr;
+            Build Free Resume &rarr;
           </button>
           <Link 
             to="/jobs" 
             className="w-full sm:w-auto border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-black uppercase tracking-widest px-8 py-4 rounded-full shadow-sm transition-all transform hover:-translate-y-0.5 active:scale-95 text-center"
           >
-            View Tech Jobs
+            Browse Verified Jobs
           </Link>
-        </div>
-
-        {/* TRUSTED BRANDS */}
-        <div className="mt-28 w-full max-w-3xl relative z-10">
-          <p className="text-[9px] font-black tracking-[0.3em] text-slate-400 uppercase mb-8 opacity-50">Trusting by leading brands, including</p>
-          <div className="flex flex-wrap items-center justify-center gap-x-14 gap-y-6 opacity-30 grayscale contrast-125 text-xs font-black text-slate-600 italic tracking-tighter">
-            <span className="hover:opacity-100 transition-opacity">Instagram</span>
-            <span className="hover:opacity-100 transition-opacity">Framer</span>
-            <span className="hover:opacity-100 transition-opacity">Microsoft</span>
-            <span className="hover:opacity-100 transition-opacity">HUAWEI</span>
-            <span className="hover:opacity-100 transition-opacity flex items-center gap-1">Walmart <span className="not-italic text-emerald-500">✨</span></span>
-          </div>
         </div>
       </section>
 
@@ -178,41 +167,23 @@ export const LandingPage = ({ setCurrentView }) => {
       <section ref={featuresRef} className="py-24 bg-slate-50/40 border-t border-slate-100 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#10B981] mb-4">Features</div>
-          <h2 className="text-3xl font-black tracking-tight mb-4 text-slate-900">Engineered for Your Success</h2>
-          <p className="text-slate-650 text-sm mb-16 max-w-xl mx-auto font-medium">Discover tools designed to bypass ATS machine filters and grab recruiter attention.</p>
+          <h2 className="text-3xl font-black tracking-tight mb-4 text-slate-900">Engineered for Your Career</h2>
+          <p className="text-slate-650 text-sm mb-16 max-w-xl mx-auto font-medium">Practical tools to help your resume pass ATS filters and connect you with verified employers.</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="group p-8 bg-white rounded-3xl border border-slate-100 text-left shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all hover:-translate-y-2">
               <div className="w-12 h-12 bg-[#E8F9EE] rounded-2xl flex items-center justify-center text-xl mb-6 group-hover:scale-110 transition-transform">✨</div>
               <h3 className="font-black text-sm mb-3 text-slate-900 uppercase tracking-tight">AI Enhancement</h3>
-              <p className="text-slate-700 text-sm leading-relaxed font-medium">Instantly elevate casual drafts into impactful corporate summaries.</p>
+              <p className="text-slate-700 text-sm leading-relaxed font-medium">Turn rough drafts into clear, professional work experience summaries.</p>
             </div>
             <div className="group p-8 bg-white rounded-3xl border border-slate-100 text-left shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all hover:-translate-y-2">
               <div className="w-12 h-12 bg-[#E8F9EE] rounded-2xl flex items-center justify-center text-xl mb-6 group-hover:scale-110 transition-transform">📂</div>
               <h3 className="font-black text-sm mb-3 text-slate-900 uppercase tracking-tight">Smart Parsing</h3>
-              <p className="text-slate-700 text-sm leading-relaxed font-medium">Upload old PDF resumes and let AI instantly map your fields perfectly.</p>
+              <p className="text-slate-700 text-sm leading-relaxed font-medium">Upload your existing PDF resume and let AI map your fields automatically.</p>
             </div>
             <div className="group p-8 bg-white rounded-3xl border border-slate-100 text-left shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all hover:-translate-y-2">
               <div className="w-12 h-12 bg-[#E8F9EE] rounded-2xl flex items-center justify-center text-xl mb-6 group-hover:scale-110 transition-transform">🚀</div>
               <h3 className="font-black text-sm mb-3 text-slate-900 uppercase tracking-tight">ATS Optimization</h3>
-              <p className="text-slate-700 text-sm leading-relaxed font-medium">Format structured keywords cleanly to bypass machine filters.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 🟢 TESTIMONIALS SECTION */}
-      <section ref={testimonialsRef} className="py-24 bg-white px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#10B981] mb-6">Testimonials</div>
-          <h2 className="text-3xl font-black tracking-tight mb-16 text-slate-900">Don't just take our words</h2>
-          <div className="grid md:grid-cols-2 gap-8 text-left">
-            <div className="bg-slate-50/50 p-8 rounded-3xl border border-slate-100 hover:border-[#10B981]/20 transition-colors">
-              <p className="text-slate-600 text-sm italic mb-6 leading-relaxed font-medium">"The AI parser saved me hours of retyping data. The interface is completely effortless and the design is stunning!"</p>
-              <h4 className="font-black text-xs text-slate-900 uppercase tracking-widest">- Happy Candidate</h4>
-            </div>
-            <div className="bg-slate-50/50 p-8 rounded-3xl border border-slate-100 hover:border-[#10B981]/20 transition-colors">
-              <p className="text-slate-600 text-sm italic mb-6 leading-relaxed font-medium">"Enhanced my job summaries perfectly. Got 3 interviews in my first week of applying after being stuck."</p>
-              <h4 className="font-black text-xs text-slate-900 uppercase tracking-widest">- Lead Engineer</h4>
+              <p className="text-slate-700 text-sm leading-relaxed font-medium">Format structured keywords cleanly so your resume is easy for recruiters and systems to read.</p>
             </div>
           </div>
         </div>

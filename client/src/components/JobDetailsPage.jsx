@@ -5,78 +5,6 @@ import Footer from './Footer';
 import { logMetric } from '../lib/firebase';
 
 
-const ADZUNA_APP_ID = '80388a5b';
-const ADZUNA_APP_KEY = '734f6394a33847dd19195ed41ab7fa1d';
-
-const MOCK_JOBS = [
-  {
-    id: 'mock_job_1',
-    title: 'Senior Full Stack Engineer',
-    company: { display_name: 'TechFlow' },
-    location: { display_name: 'Worldwide (Remote)' },
-    description: 'We are looking for a Senior Full Stack Engineer with strong experience in React, Node.js, and cloud systems to help build our scalable SaaS platform. You will design, build and deploy production grade services, scale frontend architectures, and coordinate cloud infrastructures on AWS.',
-    salary_min: 130000,
-    salary_max: 170000,
-    created: '2026-06-18T12:00:00Z',
-    category: { label: 'IT Jobs' }
-  },
-  {
-    id: 'mock_job_2',
-    title: 'Product UI/UX Designer',
-    company: { display_name: 'DesignWave' },
-    location: { display_name: 'Remote (Worldwide)' },
-    description: 'Join our creative team to lead the visual and interaction design of our mobile and desktop web applications. Strong portfolio with micro-interactions is required. Collaborating closely with engineers and product managers, you will craft premium layouts, design clean components, and refine experiences.',
-    salary_min: 95000,
-    salary_max: 125000,
-    created: '2026-06-17T09:30:00Z',
-    category: { label: 'Design Jobs' }
-  },
-  {
-    id: 'mock_job_3',
-    title: 'AI Product Specialist',
-    company: { display_name: 'Brainwave AI' },
-    location: { display_name: 'Worldwide (Remote)' },
-    description: 'Looking for a product specialist with experience in Large Language Model (LLM) fine-tuning, prompt engineering, and model validation frameworks. You will research, iterate, and integrate generative models into business tools and customer-facing interfaces.',
-    salary_min: 140000,
-    salary_max: 190000,
-    created: '2026-06-19T08:15:00Z',
-    category: { label: 'IT Jobs' }
-  },
-  {
-    id: 'mock_job_4',
-    title: 'Lead Frontend Developer',
-    company: { display_name: 'WebFlow Studio' },
-    location: { display_name: 'Worldwide (Remote)' },
-    description: 'We are seeking an experienced Frontend Developer with expert knowledge of Next.js, TailwindCSS, and visual graphics interfaces. Build premium user interfaces, configure responsive layouts, optimize speeds, and deliver a visual presentation.',
-    salary_min: 110000,
-    salary_max: 145000,
-    created: '2026-06-15T14:45:00Z',
-    category: { label: 'IT Jobs' }
-  },
-  {
-    id: 'mock_job_5',
-    title: 'DevOps & Infrastructure Architect',
-    company: { display_name: 'CloudScale Corp' },
-    location: { display_name: 'Worldwide (Remote)' },
-    description: 'Manage our global AWS container clusters. Deep expertise in Terraform, Kubernetes, and automated deployment pipelines is highly preferred. Run infrastructure scaling checks and optimize security barriers.',
-    salary_min: 150000,
-    salary_max: 195000,
-    created: '2026-06-16T11:20:00Z',
-    category: { label: 'IT Jobs' }
-  },
-  {
-    id: 'mock_job_6',
-    title: 'Growth Marketing Manager',
-    company: { display_name: 'BrandGrowth Co' },
-    location: { display_name: 'Remote (Worldwide)' },
-    description: 'Lead our organic search SEO campaigns and paid user acquisition initiatives. Experience scaling early stage software applications is required. Direct outreach frameworks and define marketing metrics.',
-    salary_min: 80000,
-    salary_max: 105000,
-    created: '2026-06-14T10:00:00Z',
-    category: { label: 'Marketing Jobs' }
-  }
-];
-
 function cleanCorruptedText(text) {
   if (!text) return '';
   return text
@@ -422,18 +350,8 @@ export default function JobDetailsPage() {
   useEffect(() => {
     const fetchJob = async () => {
       setIsLoading(true);
-      if (!id) return;
-
-      if (id.startsWith('mock_job_')) {
-        const matchedMock = MOCK_JOBS.find(j => j.id === id) || MOCK_JOBS[0];
-        setJob({
-          ...matchedMock,
-          source_url: 'https://genusjob.com',
-          redirect_url: 'https://genusjob.com',
-          requirements: 'Standard requirements apply.',
-          benefits: 'Standard company benefits.',
-          deadline: '30 days from now'
-        });
+      if (!id) {
+        setJob(null);
         setIsLoading(false);
         return;
       }
@@ -451,7 +369,11 @@ export default function JobDetailsPage() {
 
         if (error) throw error;
 
-        if (dbJob) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const isNotPublished = dbJob && dbJob.status && dbJob.status !== 'published';
+        const isExpired = dbJob && dbJob.deadline && String(dbJob.deadline).slice(0, 10) < todayStr;
+
+        if (dbJob && !isNotPublished && !isExpired) {
           const rawCompany = dbJob.company ? (typeof dbJob.company === 'object' ? dbJob.company.display_name || dbJob.company.name : dbJob.company) : null;
           const cleanCompany = (rawCompany && String(rawCompany).trim() !== '' && String(rawCompany).trim().toLowerCase() !== 'hiring company') ? String(rawCompany).trim() : null;
 
@@ -473,20 +395,11 @@ export default function JobDetailsPage() {
           };
           setJob(normalizedJob);
         } else {
-          throw new Error('Not found in database');
+          setJob(null);
         }
       } catch (err) {
-        console.warn('Supabase details fetch failed, loading mock fallback:', err);
-        const hashIndex = Math.abs(id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % MOCK_JOBS.length;
-        setJob({
-          ...MOCK_JOBS[hashIndex],
-          id,
-          source_url: 'https://genusjob.com',
-          redirect_url: 'https://genusjob.com',
-          requirements: 'Relevant qualifications required.',
-          benefits: 'Industry standard package.',
-          deadline: '30 days from now'
-        });
+        console.warn('Job lookup returned no active job:', err);
+        setJob(null);
       } finally {
         setIsLoading(false);
       }
@@ -543,8 +456,10 @@ export default function JobDetailsPage() {
       updateMetaTag('twitter:description', cleanDesc);
       updateMetaTag('twitter:image', 'https://genusjob.com/og-banner.png');
       updateMetaTag('twitter:card', 'summary_large_image');
+    } else if (!isLoading) {
+      document.title = 'This job is no longer available | GenusJob';
     }
-  }, [job]);
+  }, [job, isLoading]);
 
   useEffect(() => {
     if (!job) return;
@@ -627,9 +542,47 @@ export default function JobDetailsPage() {
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-[#FFFFFF] text-[#1F2937] flex flex-col items-center justify-center font-sans">
-        <p className="text-sm font-black uppercase tracking-widest text-slate-450 mb-6">Position not found.</p>
-        <Link to="/jobs" className="bg-slate-900 border border-slate-950 text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:text-[#10B981] transition-all">Back to Jobs</Link>
+      <div className="min-h-screen bg-[#FFFFFF] text-[#1F2937] flex flex-col justify-between font-sans antialiased">
+        <header className="border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-50 w-full">
+          <div className="px-4 py-3 flex justify-between items-center max-w-6xl mx-auto">
+            <Link to="/" className="flex items-center gap-2 cursor-pointer focus:outline-none hover:opacity-85 transition">
+              <div className="bg-[#10B981] p-1.5 rounded-lg shadow-lg shadow-emerald-500/10">
+                <span className="text-white text-base">✨</span>
+              </div>
+              <span className="text-lg md:text-2xl font-black tracking-tight text-gray-900 font-sans">
+                GENUSJOB.COM
+              </span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link to="/jobs" className="text-xs font-black uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors">
+                Jobs
+              </Link>
+              <Link to="/" className="bg-[#10B981] hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest px-4 py-2 rounded-full transition">
+                Build Resume
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-3xl mb-6">
+            📋
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tight mb-3">
+            This job is no longer available
+          </h1>
+          <p className="text-sm font-medium text-slate-500 leading-relaxed mb-8">
+            This listing may have closed, reached its application deadline, or been removed. Check out our latest verified remote and international jobs below.
+          </p>
+          <Link
+            to="/jobs"
+            className="bg-[#10B981] hover:bg-emerald-500 text-white px-7 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-md hover:shadow-emerald-500/20 transition-all"
+          >
+            View Latest Verified Jobs &rarr;
+          </Link>
+        </main>
+
+        <Footer />
       </div>
     );
   }
@@ -644,8 +597,6 @@ export default function JobDetailsPage() {
 
   const rawType = job.job_type || job.employment_type || '';
   const jobType = (rawType && String(rawType).trim() !== '' && String(rawType).trim().toLowerCase() !== 'n/a') ? String(rawType).trim() : null;
-
-  const salaryRange = formatMonthlySalary(job.salary_min, job.salary_max);
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#1F2937] font-sans antialiased selection:bg-emerald-500 selection:text-white">
