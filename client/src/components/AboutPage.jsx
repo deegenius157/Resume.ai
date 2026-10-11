@@ -2,98 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Footer from './Footer';
 
-// MODULAR TESTIMONIALS & SUCCESS STORIES COMPONENT
-function TestimonialsSection({ showLiveOnly = false }) {
-  const testimonials = [
-    {
-      id: 1,
-      quote: "GenusJob helped me optimize my CV for ATS filters in under a minute. I landed my remote Full-Stack Developer role with a US startup within two weeks of applying!",
-      name: "Adebayo O.",
-      role: "Full-Stack Software Engineer",
-      location: "Lagos, Nigeria",
-      metric: "Hired in 14 Days",
-      avatar: "👨‍💻"
-    },
-    {
-      id: 2,
-      quote: "Finding legit AI Data Annotation and Operations roles was nearly impossible on traditional job sites. GenusJob curates verified, high-paying remote roles that actually exist.",
-      name: "Sarah M.",
-      role: "AI Data Specialist & Prompt Engineer",
-      location: "Nairobi, Kenya",
-      metric: "$4,500 / Month",
-      avatar: "🤖"
-    },
-    {
-      id: 3,
-      quote: "The ATS keyword optimization tool changed everything for me. Instead of sending 100 blind applications, I tailored my CV to 5 targeted roles and got 3 interviews.",
-      name: "Carlos R.",
-      role: "Technical Product Manager",
-      location: "Buenos Aires, Argentina",
-      metric: "60% Interview Rate",
-      avatar: "🚀"
-    }
-  ];
-
-  return (
-    <section className="space-y-10 text-center py-6">
-      <div className="space-y-3">
-        <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-[#10B981] text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-emerald-500/15">
-          <span>💬 SUCCESS STORIES &amp; METRICS</span>
-        </div>
-        <h2 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tight">
-          Empowering Talent Worldwide
-        </h2>
-        <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest max-w-xl mx-auto">
-          Real results from job seekers who optimized their CVs and landed remote careers on GenusJob
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-        {testimonials.map((item) => (
-          <div
-            key={item.id}
-            className="bg-slate-50 border border-slate-200/90 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6 relative overflow-hidden group"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/[0.03] rounded-full blur-2xl pointer-events-none" />
-            
-            <div className="space-y-4 relative z-10">
-              <div className="flex items-center justify-between">
-                <span className="text-3xl">{item.avatar}</span>
-                <span className="text-[10px] font-black uppercase tracking-widest bg-[#10B981] text-white px-3 py-1 rounded-full shadow-sm">
-                  {item.metric}
-                </span>
-              </div>
-              <p className="text-sm font-medium text-slate-700 leading-relaxed italic">
-                &ldquo;{item.quote}&rdquo;
-              </p>
-            </div>
-
-            <div className="pt-4 border-t border-slate-200/60 flex items-center justify-between relative z-10">
-              <div>
-                <h4 className="text-sm font-black text-slate-900">{item.name}</h4>
-                <p className="text-xs font-semibold text-slate-500">{item.role}</p>
-              </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                {item.location}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function AboutPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
-    document.title = 'About Us | GenusJob - Building Bridges Between Talent & Opportunity';
+    document.title = 'About Us | GenusJob: Verified Jobs and Free Resume Builder';
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
       metaDesc.setAttribute(
         'content',
-        'GenusJob was created to empower job seekers with verified remote careers and AI-driven tools to get hired faster.'
+        'GenusJob connects job seekers with verified remote and international jobs and provides a free AI resume builder.'
       );
     }
   }, []);
@@ -272,7 +190,7 @@ export default function AboutPage() {
                 GenusJob isn't just another job board. It is a complete career ecosystem designed to make job seekers genuinely employable. We curate high-paying, verified remote and hybrid opportunities while giving candidates access to 60-second AI tools that optimize their CVs to pass ATS filters and stand out to recruiters on day one.
               </p>
               <p>
-                Whether you are looking for your next big break in Tech, Growth Operations, or AI-enabled roles, GenusJob exists to make sure your talent gets seen, valued, and hired.&rdquo;
+                Whether you are looking for your next role in Tech, Design, Marketing, Sales, Customer Support, Admin, or AI-enabled operations, GenusJob exists to make sure your talent gets seen, valued, and hired.&rdquo;
               </p>
             </div>
 
@@ -314,10 +232,10 @@ export default function AboutPage() {
                 🛡️
               </div>
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight group-hover:text-emerald-600 transition-colors">
-                100% Verified Remote Roles
+                Verified Job Listings
               </h3>
               <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                No spam, no ghost jobs, and no low-quality scrapes. Every listing is reviewed and verified for active hiring status and fair terms.
+                No spam, no ghost jobs, and no low-quality scrapes. Every listing is checked by GenusJob for active hiring status.
               </p>
             </div>
 
@@ -327,10 +245,10 @@ export default function AboutPage() {
                 ⚡
               </div>
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight group-hover:text-emerald-600 transition-colors">
-                AI Resume Optimization
+                Free Resume Builder
               </h3>
               <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                Instant, 60-second ATS optimization tailored to job requirements before applying, helping candidate CVs pass automated screening filters.
+                Fast ATS resume optimization tailored to job requirements before applying, helping candidate CVs pass automated screening filters.
               </p>
             </div>
 
@@ -340,10 +258,10 @@ export default function AboutPage() {
                 💰
               </div>
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight group-hover:text-emerald-600 transition-colors">
-                Transparent Compensation
+                Clear Job Details
               </h3>
               <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                Clear pay ranges, regions, and work terms on every listing. We prioritize fair compensation visibility for global talent.
+                Clear requirements, locations, deadlines, and compensation details when provided by employers.
               </p>
             </div>
 
@@ -356,7 +274,7 @@ export default function AboutPage() {
                 Community-Centric Ecosystem
               </h3>
               <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                Built to educate and support talent through every step of their career journey with actionable guides, resume builders, and interview prep.
+                Built to educate and support talent across Africa, Asia, and worldwide through every step of their career journey.
               </p>
             </div>
           </div>
@@ -372,7 +290,7 @@ export default function AboutPage() {
               Who We Serve
             </h2>
             <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest max-w-xl mx-auto">
-              Empowering ambitious professionals across every stage of their remote career journey
+              Empowering ambitious professionals across every stage of their career journey
             </p>
           </div>
 
@@ -392,10 +310,10 @@ export default function AboutPage() {
             <div className="bg-slate-50 border border-slate-200/80 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all space-y-4">
               <div className="text-4xl mb-2">💻</div>
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                Remote Professionals &amp; Tech Specialists
+                Remote &amp; International Professionals
               </h3>
               <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                Seeking high-paying, flexible, global opportunities in Software Engineering, Product, Growth Marketing, and Customer Experience.
+                Seeking flexible global opportunities in Software Engineering, Design, Marketing, Sales, Customer Support, and Admin &amp; Office roles.
               </p>
             </div>
 
@@ -449,7 +367,7 @@ export default function AboutPage() {
                 Radical Transparency
               </h3>
               <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                Clear job requirements, fair salary ranges, honest career education, and direct feedback without ghosting.
+                Clear job requirements, verified listings, honest career education, and direct employer application links.
               </p>
             </div>
 
@@ -462,7 +380,7 @@ export default function AboutPage() {
                 Innovation Driven
               </h3>
               <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                Integrating modern AI workflows and automated matchers into traditional hiring pipelines for faster, smarter results.
+                Integrating modern AI workflows and resume builders into the job search process for faster, smarter results.
               </p>
             </div>
           </div>
@@ -480,7 +398,7 @@ export default function AboutPage() {
               Hiring Remote Talent?
             </h3>
             <p className="text-base font-medium text-slate-300 leading-relaxed">
-              Access pre-vetted, highly motivated candidates equipped with modern AI skills. Partner with GenusJob to streamline your hiring pipeline and fill roles faster.
+              Access motivated candidates across Tech, Marketing, Sales, Support, Admin, and Design. Partner with GenusJob to share your verified role.
             </p>
           </div>
 
@@ -494,18 +412,15 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* 6. MODULAR TESTIMONIALS SECTION */}
-        <TestimonialsSection />
-
         {/* CALL TO ACTION (CTA) */}
         <section className="p-10 md:p-14 bg-slate-900 text-white rounded-[2.5rem] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-500/20 via-transparent to-transparent pointer-events-none" />
           <div className="space-y-3 max-w-xl text-left relative z-10">
             <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight leading-tight">
-              Ready to land your dream remote role?
+              Ready to find your next role?
             </h3>
             <p className="text-sm md:text-base font-medium text-slate-300 leading-relaxed">
-              Explore thousands of active, verified opportunities or build an ATS-proof resume with our AI tools today.
+              Explore verified remote and international opportunities or build an ATS-ready resume for free today.
             </p>
           </div>
 

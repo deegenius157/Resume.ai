@@ -15,7 +15,7 @@ export default function Footer() {
             <span className="text-lg font-medium tracking-tight text-[#10B981] font-sans">JOB.COM</span>
           </Link>
           <p className="leading-relaxed text-slate-300 text-xs">
-            The world's most powerful AI resume builder and verified remote career ecosystem.
+            Free resume builder and verified remote and international job listings.
           </p>
           <a
             href="https://deegeniousweb.pyfib.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAdGRleASRIF9leHRuA2FlbQIxMQBzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQAAaeVqS87Xe9_umYm9qhK_BGpFbV-41m9T9auEpM-beM052i8hIhG0tyts3pRfw_aem_YWlNzvLp3yZvUMA8GqE6LQ"
